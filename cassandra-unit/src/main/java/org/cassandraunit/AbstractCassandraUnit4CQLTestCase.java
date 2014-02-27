@@ -45,7 +45,7 @@ public abstract class AbstractCassandraUnit4CQLTestCase {
     public void after(){
         if(session!=null){
             log.debug("session shutdown");
-            session.shutdown();
+            session.close();
         }
     }
 
