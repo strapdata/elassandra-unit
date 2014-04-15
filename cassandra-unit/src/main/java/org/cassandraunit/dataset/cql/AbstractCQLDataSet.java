@@ -58,7 +58,8 @@ public abstract class AbstractCQLDataSet implements CQLDataSet {
         List<String> statements = new ArrayList<String>();
         StringBuffer statementUnderConstruction = new StringBuffer();
         for (String line : lines) {
-            statementUnderConstruction.append(line.trim());
+            line = line.trim();
+            statementUnderConstruction.append(line);
             if (endOfStatementLine(line)) {
                 statements.add(statementUnderConstruction.toString());
                 statementUnderConstruction.setLength(0);
