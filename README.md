@@ -16,6 +16,7 @@ Main features :
 ---------------
 - Start an embedded Cassandra.
 - Create structure (keyspace and Column Families) and load data from an XML, JSON or YAML DataSet.
+- Execute a CQL script.
 
 Where to start :
 ----------------
