@@ -4,6 +4,8 @@ package org.cassandraunit.dataset;
 import org.cassandraunit.dataset.commons.ParsedColumnFamily;
 import org.cassandraunit.dataset.commons.ParsedKeyspace;
 import org.cassandraunit.dataset.json.AbstractJsonDataSet;
+import org.cassandraunit.model.ColumnFamilyModel;
+import org.cassandraunit.model.KeyspaceModel;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -16,87 +18,69 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Decorates an {@link org.cassandraunit.dataset.json.AbstractJsonDataSet},
- * allowing multiple seed files to be specified,
+ * Allowing multiple files/classpath-resources containing DataSets
+ * to be specified,
  * as long as they all belong to the same
  * overall keyspace. This class just merges all of the column-families together.
- *
- *
- *
  */
 public class MultiSourceDataSet implements DataSet {
 
-    private final AbstractJsonDataSet delegate;
-    private final List<String> filenames;
+    private final List<DataSet> dataSets;
 
     public static MultiSourceDataSet fromClassPath(String... classpathFileNames) {
-
+        List<DataSet> ds = new ArrayList<DataSet>(classpathFileNames.length);
+        for (String fileName : classpathFileNames) {
+            ds.add(new ClassPathDataSet(fileName));
+        }
+        return new MultiSourceDataSet(ds);
     }
 
     public static MultiSourceDataSet fromFiles(String... fileNames) {
+        List<DataSet> ds = new ArrayList<DataSet>(fileNames.length);
         for (String fileName : fileNames) {
-
+            ds.add(new FileDataSet(fileName));
         }
+        return new MultiSourceDataSet(ds);
     }
 
-    public MultiSourceDataSet(AbstractJsonDataSet delegate, List<String> filenames) {
-        //super(filenames.get(0));
-        this.filenames = filenames;
-    }
-
-    protected ParsedKeyspace getParsedKeyspace() {
-
-        Set<ParsedKeyspace> parsedKeyspaces = new HashSet<ParsedKeyspace>();
+    private MultiSourceDataSet(List<DataSet> dataSets) {
+        this.dataSets = dataSets;
         String keyspaceName = "";
 
-        for (String dataSetFilename : filenames) {
-            InputStream inputDataSetLocation = delegate.getInputDataSetLocation(dataSetFilename);
-            if (inputDataSetLocation == null) {
-                throw new ParseException("Dataset not found");
-            }
-
-            ObjectMapper jsonMapper = new ObjectMapper();
-            try {
-                ParsedKeyspace pk = jsonMapper.readValue(inputDataSetLocation, ParsedKeyspace.class);
-
-                if (!keyspaceName.isEmpty() && keyspaceName.equals(pk.getName())) {
+        for (DataSet dataSet : dataSets) {
+            if (keyspaceName.isEmpty()) {
+                keyspaceName = dataSet.getKeyspace().getName();
+            } else {
+                if (!keyspaceName.equals(dataSet.getKeyspace().getName())) {
                     throw new ParseException(
-                            new IllegalArgumentException("Only one keyspace name is supported:" +
-                                    "was expecting " + keyspaceName + " but found " + pk.getName()));
+                        new IllegalArgumentException("Only one keyspace name is supported:" +
+                            "was expecting " + keyspaceName + " but found " + dataSet.getKeyspace().getName()));
                 }
-
-                parsedKeyspaces.add(pk);
-            } catch (JsonParseException e) {
-                throw new ParseException(e);
-            } catch (JsonMappingException e) {
-                throw new ParseException(e);
-            } catch (IOException e) {
-                throw new ParseException(e);
             }
         }
-
-        return mergeParsedKeyspaces(parsedKeyspaces);
     }
 
-    private ParsedKeyspace mergeParsedKeyspaces(Set<ParsedKeyspace> pks) {
-        if (pks.isEmpty()) {
-            throw new ParseException(
-                    new IllegalStateException("No keyspaces were found. Can't merge anything."));
+    private DataSet firstDataSet() {
+       return dataSets.get(0);
+    }
+
+    @Override
+    public KeyspaceModel getKeyspace() {
+        return firstDataSet().getKeyspace();
+    }
+
+    @Override
+    public List<ColumnFamilyModel> getColumnFamilies() {
+        if (dataSets.size() == 1) {
+            return firstDataSet().getColumnFamilies();
         }
 
-        ParsedKeyspace firstKeyspace = pks.iterator().next();
+        List<ColumnFamilyModel> mergedColumnFamilies = new ArrayList<ColumnFamilyModel>();
 
-        if (pks.size() == 1) {
-            return firstKeyspace;
+        for (DataSet dataSet : dataSets) {
+            mergedColumnFamilies.addAll(dataSet.getColumnFamilies());
         }
 
-        List<ParsedColumnFamily> mergedColumnFamilies = new ArrayList<ParsedColumnFamily>();
-
-        for (ParsedKeyspace pk : pks) {
-            mergedColumnFamilies.addAll(pk.getColumnFamilies());
-        }
-
-        firstKeyspace.setColumnFamilies(mergedColumnFamilies);
-        return firstKeyspace;
+        return mergedColumnFamilies;
     }
 }
