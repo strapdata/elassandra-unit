@@ -1,21 +1,11 @@
 package org.cassandraunit.dataset;
 
 
-import org.cassandraunit.dataset.commons.ParsedColumnFamily;
-import org.cassandraunit.dataset.commons.ParsedKeyspace;
-import org.cassandraunit.dataset.json.AbstractJsonDataSet;
 import org.cassandraunit.model.ColumnFamilyModel;
 import org.cassandraunit.model.KeyspaceModel;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Allowing multiple files/classpath-resources containing DataSets

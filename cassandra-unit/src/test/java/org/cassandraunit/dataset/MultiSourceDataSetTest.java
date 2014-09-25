@@ -28,9 +28,9 @@ public class MultiSourceDataSetTest {
 	}
 
 	@Test
-	public void shouldGetAJsonDataSetStructure() throws Exception {
+	public void shouldGetAJsonDataSetStructureFromASingleFile() throws Exception {
 
-		DataSet dataSet = new FileDataSet(targetJsonDataSetPathFileName);
+		DataSet dataSet = MultiSourceDataSet.fromFiles(targetJsonDataSetPathFileName);
 		assertDataSetDefaultValues(dataSet);
 	}
 
