@@ -79,11 +79,6 @@
       <artifactId>spring-test</artifactId>
       <version>4.0.2.RELEASE</version>
     </dependency>
-<!--     <dependency> -->
-<!--       <groupId>com.google.guava</groupId> -->
-<!--       <artifactId>guava</artifactId> -->
-<!--       <version>15.0</version> -->
-<!--     </dependency> -->
     <dependency>
       <groupId>org.cassandraunit</groupId>
       <artifactId>cassandra-unit</artifactId>
