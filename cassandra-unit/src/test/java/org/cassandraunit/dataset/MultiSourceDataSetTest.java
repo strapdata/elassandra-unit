@@ -2,6 +2,7 @@ package org.cassandraunit.dataset;
 
 import static org.cassandraunit.SampleDataSetChecker.assertDataSetDefaultValues;
 
+import com.sun.corba.se.impl.orb.ParserTable;
 import org.cassandraunit.dataset.json.ClassPathJsonDataSet;
 import org.cassandraunit.utils.FileTmpHelper;
 import org.junit.Before;
@@ -15,6 +16,7 @@ import org.junit.Test;
 public class MultiSourceDataSetTest {
 
 	private String targetXmlDataSetPathFileName = null;
+	private String alternateXmlDataSetPathFileName = null;
 	private String targetJsonDataSetPathFileName = null;
 	private String targetYamlDataSetPathFileName = null;
 
@@ -22,11 +24,15 @@ public class MultiSourceDataSetTest {
 	public void before() throws Exception {
 		targetXmlDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
 				"/xml/dataSetDefaultValues.xml");
+        alternateXmlDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
+                "/xml/dataSetDefinedValues.xml");
 		targetJsonDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
 				"/json/dataSetDefaultValues.json");
 		targetYamlDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
 				"/yaml/dataSetDefaultValues.yaml");
 	}
+
+    // Test reading from single files
 
 	@Test
 	public void shouldGetAJsonDataSetStructureFromASingleFile() throws Exception {
@@ -72,6 +78,8 @@ public class MultiSourceDataSetTest {
 		dataSet.getKeyspace();
 	}
 
+    // Test reading from classpath
+
     @Test
     public void shouldGetAJsonDataSetStructureFromASingleClasspathFile() {
         DataSet dataSet = MultiSourceDataSet.fromClassPath("json/dataSetDefaultValues.json");
@@ -114,4 +122,20 @@ public class MultiSourceDataSetTest {
         dataSet.getKeyspace();
     }
 
+    // Test the main functionality - merging multiple files
+
+    @Test(expected = ParseException.class)
+    public void shouldNotBeAbleToMergeMultipleFilesIfKeyspacesDiffer() {
+        MultiSourceDataSet.fromFiles(targetXmlDataSetPathFileName, alternateXmlDataSetPathFileName);
+    }
+
+    @Test(expected = ParseException.class)
+    public void shouldNotBeAbleToMergeTheSameFileTwice() {
+        MultiSourceDataSet.fromFiles(targetXmlDataSetPathFileName, targetXmlDataSetPathFileName);
+    }
+
+    @Test(expected = ParseException.class)
+    public void shouldNotBeAbleToGetColumnFamiliesIfDuplicateNamesExist() {
+        MultiSourceDataSet.fromFiles(targetXmlDataSetPathFileName, alternateXmlDataSetPathFileName);
+    }
 }

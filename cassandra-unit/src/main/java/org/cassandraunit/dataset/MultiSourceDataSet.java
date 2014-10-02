@@ -5,7 +5,9 @@ import org.cassandraunit.model.ColumnFamilyModel;
 import org.cassandraunit.model.KeyspaceModel;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Allowing multiple files/classpath-resources containing DataSets
@@ -18,7 +20,8 @@ import java.util.List;
  */
 public class MultiSourceDataSet implements DataSet {
 
-    private final List<DataSet> dataSets;
+    private final List<DataSet> dataSets = new ArrayList<DataSet>();
+    private final List<ColumnFamilyModel> mergedColumnFamilies = new ArrayList<ColumnFamilyModel>();
 
     public static MultiSourceDataSet fromClassPath(String... classpathFileNames) {
         List<DataSet> ds = buildDataSetList(classpathFileNames);
@@ -44,20 +47,46 @@ public class MultiSourceDataSet implements DataSet {
     }
 
     private MultiSourceDataSet(List<DataSet> dataSets) {
-        this.dataSets = dataSets;
         String keyspaceName = "";
 
         for (DataSet dataSet : dataSets) {
             if (keyspaceName.isEmpty()) {
                 keyspaceName = dataSet.getKeyspace().getName();
             } else {
-                if (!keyspaceName.equals(dataSet.getKeyspace().getName())) {
-                    throw new ParseException(
-                        new IllegalArgumentException("Only one keyspace name is supported:" +
-                            "was expecting " + keyspaceName + " but found " + dataSet.getKeyspace().getName()));
-                }
+                checkForInconsistentKeyspaceNames(keyspaceName, dataSet);
             }
+            checkForDuplicateColumnFamilies(dataSet);
+            mergedColumnFamilies.addAll(dataSet.getColumnFamilies());
+            this.dataSets.add(dataSet);
         }
+
+    }
+
+    private final void checkForInconsistentKeyspaceNames(String keyspaceName, DataSet dataSet) {
+        if (!keyspaceName.equals(dataSet.getKeyspace().getName())) {
+            throw new ParseException(
+                    new IllegalArgumentException("Only one keyspace name is supported:" +
+                            "was expecting " + keyspaceName + " but found " + dataSet.getKeyspace().getName()));
+        }
+    }
+
+
+    private final void checkForDuplicateColumnFamilies(DataSet mergeCandidate) {
+        Set<String> intersection = getColumnFamilyNames(mergedColumnFamilies);
+        Set<String> candidateColumnFamilyNames = getColumnFamilyNames(mergeCandidate.getColumnFamilies());
+        intersection.retainAll(candidateColumnFamilyNames);
+        if (!intersection.isEmpty()) {
+            throw new ParseException("Duplicate Column Family name(s) found " +
+                    "while checking whether datasets can be merged:" + intersection);
+        }
+    }
+
+    private static final Set<String> getColumnFamilyNames(List<ColumnFamilyModel> columnFamilies) {
+        Set<String> names = new HashSet<String>();
+        for (ColumnFamilyModel cfm : columnFamilies) {
+            names.add(cfm.getName());
+        }
+        return names;
     }
 
     private DataSet firstDataSet() {
@@ -71,16 +100,8 @@ public class MultiSourceDataSet implements DataSet {
 
     @Override
     public List<ColumnFamilyModel> getColumnFamilies() {
-        if (dataSets.size() == 1) {
-            return firstDataSet().getColumnFamilies();
-        }
-
-        List<ColumnFamilyModel> mergedColumnFamilies = new ArrayList<ColumnFamilyModel>();
-
-        for (DataSet dataSet : dataSets) {
-            mergedColumnFamilies.addAll(dataSet.getColumnFamilies());
-        }
-
         return mergedColumnFamilies;
     }
+
+
 }
