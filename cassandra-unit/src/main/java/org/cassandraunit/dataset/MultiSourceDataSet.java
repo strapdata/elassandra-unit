@@ -9,16 +9,19 @@ import java.util.List;
 
 /**
  * Allowing multiple files/classpath-resources containing DataSets
- * to be specified,
- * as long as they all belong to the same
- * overall keyspace. This class just merges all of the column-families together.
+ * to be specified, as long as they all belong to the same
+ * overall keyspace.
+ *
+ * The specified files can be any mixture of JSON, XML or YAML.
+ *
+ * This class just merges all of the column-families together.
  */
 public class MultiSourceDataSet implements DataSet {
 
     private final List<DataSet> dataSets;
 
     public static MultiSourceDataSet fromClassPath(String... classpathFileNames) {
-        List<DataSet> ds = new ArrayList<DataSet>(classpathFileNames.length);
+        List<DataSet> ds = buildDataSetList(classpathFileNames);
         for (String fileName : classpathFileNames) {
             ds.add(new ClassPathDataSet(fileName));
         }
@@ -26,11 +29,18 @@ public class MultiSourceDataSet implements DataSet {
     }
 
     public static MultiSourceDataSet fromFiles(String... fileNames) {
-        List<DataSet> ds = new ArrayList<DataSet>(fileNames.length);
+        List<DataSet> ds = buildDataSetList(fileNames);
         for (String fileName : fileNames) {
             ds.add(new FileDataSet(fileName));
         }
         return new MultiSourceDataSet(ds);
+    }
+
+    private static List<DataSet> buildDataSetList(String... fileNames) {
+        if (fileNames == null) {
+            throw new ParseException("A non-null list of filenames must be supplied");
+        }
+        return new ArrayList<DataSet>(fileNames.length);
     }
 
     private MultiSourceDataSet(List<DataSet> dataSets) {
