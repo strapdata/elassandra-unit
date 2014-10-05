@@ -2,11 +2,15 @@ package org.cassandraunit.dataset;
 
 import static org.cassandraunit.SampleDataSetChecker.assertDataSetDefaultValues;
 
-import com.sun.corba.se.impl.orb.ParserTable;
 import org.cassandraunit.dataset.json.ClassPathJsonDataSet;
+import org.cassandraunit.model.ColumnFamilyModel;
 import org.cassandraunit.utils.FileTmpHelper;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * 
@@ -16,6 +20,7 @@ import org.junit.Test;
 public class MultiSourceDataSetTest {
 
 	private String targetXmlDataSetPathFileName = null;
+	private String secondXmlDataSetPathFileName = null;
 	private String alternateXmlDataSetPathFileName = null;
 	private String targetJsonDataSetPathFileName = null;
 	private String targetYamlDataSetPathFileName = null;
@@ -24,6 +29,8 @@ public class MultiSourceDataSetTest {
 	public void before() throws Exception {
 		targetXmlDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
 				"/xml/dataSetDefaultValues.xml");
+        secondXmlDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
+                "/xml/dataSetDefaultValuesMultiple.xml");
         alternateXmlDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
                 "/xml/dataSetDefinedValues.xml");
 		targetJsonDataSetPathFileName = FileTmpHelper.copyClassPathDataSetToTmpDirectory(this.getClass(),
@@ -122,20 +129,55 @@ public class MultiSourceDataSetTest {
         dataSet.getKeyspace();
     }
 
-    // Test the main functionality - merging multiple files
+    // Test the main functionality - merging multiple files - negative cases
 
-    @Test(expected = ParseException.class)
+    private static void assertThrowsParseExceptionIncludingMessage(String message, String ... filenames) {
+        try {
+            MultiSourceDataSet.fromFiles(filenames);
+            fail("Expected a ParseException with message '" + message + "' to be thrown");
+        } catch(ParseException pe) {
+            assertTrue(pe.getMessage().contains(message));
+        } catch (Exception e) {
+            fail("Expected a ParseException with message '" + message + "' to be thrown");
+        }
+    }
+
+
+    @Test
     public void shouldNotBeAbleToMergeMultipleFilesIfKeyspacesDiffer() {
-        MultiSourceDataSet.fromFiles(targetXmlDataSetPathFileName, alternateXmlDataSetPathFileName);
+        assertThrowsParseExceptionIncludingMessage(
+            "Only one keyspace name is supported",
+            targetXmlDataSetPathFileName, alternateXmlDataSetPathFileName);
     }
 
-    @Test(expected = ParseException.class)
+    @Test
     public void shouldNotBeAbleToMergeTheSameFileTwice() {
-        MultiSourceDataSet.fromFiles(targetXmlDataSetPathFileName, targetXmlDataSetPathFileName);
+        assertThrowsParseExceptionIncludingMessage(
+            "Duplicate Column Family name(s) found while checking whether datasets can be merged",
+            targetXmlDataSetPathFileName, targetXmlDataSetPathFileName);
     }
 
-    @Test(expected = ParseException.class)
-    public void shouldNotBeAbleToGetColumnFamiliesIfDuplicateNamesExist() {
-        MultiSourceDataSet.fromFiles(targetXmlDataSetPathFileName, alternateXmlDataSetPathFileName);
+    // Test the main functionality - merging multiple files - positive cases
+
+    @Test
+    public void shouldBeAbleToMergeMultipleFilesOfSameFileFormat() {
+        DataSet dataSet = MultiSourceDataSet.fromFiles(targetXmlDataSetPathFileName, secondXmlDataSetPathFileName);
+        List<ColumnFamilyModel> columnFamilies = dataSet.getColumnFamilies();
+
+        assertNotNull(columnFamilies);
+        assertEquals(2, columnFamilies.size());
+        assertEquals("columnFamily1", columnFamilies.get(0).getName());
+        assertEquals("columnFamily2", columnFamilies.get(1).getName());
+    }
+
+    @Test
+    public void shouldBeAbleToMergeMultipleFilesOfDifferentFileFormat() {
+        DataSet dataSet = MultiSourceDataSet.fromFiles(targetJsonDataSetPathFileName, secondXmlDataSetPathFileName);
+        List<ColumnFamilyModel> columnFamilies = dataSet.getColumnFamilies();
+
+        assertNotNull(columnFamilies);
+        assertEquals(2, columnFamilies.size());
+        assertEquals("columnFamily1", columnFamilies.get(0).getName());
+        assertEquals("columnFamily2", columnFamilies.get(1).getName());
     }
 }

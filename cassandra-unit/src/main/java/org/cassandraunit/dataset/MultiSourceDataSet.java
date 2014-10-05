@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * Allowing multiple files/classpath-resources containing DataSets
  * to be specified, as long as they all belong to the same
- * overall keyspace.
+ * overall keyspace, and don't have clashing column families.
  *
  * The specified files can be any mixture of JSON, XML or YAML.
  *
@@ -59,13 +59,12 @@ public class MultiSourceDataSet implements DataSet {
             mergedColumnFamilies.addAll(dataSet.getColumnFamilies());
             this.dataSets.add(dataSet);
         }
-
     }
 
     private final void checkForInconsistentKeyspaceNames(String keyspaceName, DataSet dataSet) {
         if (!keyspaceName.equals(dataSet.getKeyspace().getName())) {
             throw new ParseException(
-                    new IllegalArgumentException("Only one keyspace name is supported:" +
+                    new IllegalArgumentException("Only one keyspace name is supported: " +
                             "was expecting " + keyspaceName + " but found " + dataSet.getKeyspace().getName()));
         }
     }
@@ -89,19 +88,13 @@ public class MultiSourceDataSet implements DataSet {
         return names;
     }
 
-    private DataSet firstDataSet() {
-       return dataSets.get(0);
-    }
-
     @Override
     public KeyspaceModel getKeyspace() {
-        return firstDataSet().getKeyspace();
+        return dataSets.get(0).getKeyspace();
     }
 
     @Override
     public List<ColumnFamilyModel> getColumnFamilies() {
         return mergedColumnFamilies;
     }
-
-
 }
