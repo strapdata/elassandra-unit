@@ -34,7 +34,7 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
 
   protected void startServer(TestContext testContext) throws Exception {
     EmbeddedCassandra embeddedCassandra = Preconditions.checkNotNull(
-            AnnotationUtils.findAnnotation(testContext.getTestInstance().getClass(), EmbeddedCassandra.class),
+            AnnotationUtils.findAnnotation(testContext.getTestClass(), EmbeddedCassandra.class),
             "CassandraUnitTestExecutionListener must be used with @EmbeddedCassandra on " + testContext.getTestClass());
     if (!initialized) {
       EmbeddedCassandraServerHelper.startEmbeddedCassandra(Optional.fromNullable(embeddedCassandra.configuration()).get());
@@ -46,7 +46,7 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
     int port = Preconditions.checkNotNull(embeddedCassandra.port(), "@EmbeddedCassandra port must not be null");
     Preconditions.checkArgument(port > 0, "@EmbeddedCassandra port must not be > 0");
 
-    CassandraDataSet cassandraDataSet = AnnotationUtils.findAnnotation(testContext.getTestInstance().getClass(), CassandraDataSet.class);
+    CassandraDataSet cassandraDataSet = AnnotationUtils.findAnnotation(testContext.getTestClass(), CassandraDataSet.class);
     if (cassandraDataSet != null) {
       List<String> dataset = null;
       ListIterator<String> datasetIterator = null;
@@ -84,11 +84,11 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
   private List<String> dataSetLocations(TestContext testContext, CassandraDataSet cassandraDataSet) {
     String[] dataset = cassandraDataSet.value();
     if (dataset.length == 0) {
-      String alternativePath = alternativePath(testContext.getTestInstance().getClass(), true, cassandraDataSet.type().name());
+      String alternativePath = alternativePath(testContext.getTestClass(), true, cassandraDataSet.type().name());
       if (testContext.getApplicationContext().getResource(alternativePath).exists()) {
         dataset = new String[]{alternativePath.replace(ResourceUtils.CLASSPATH_URL_PREFIX + "/", "")};
       } else {
-        alternativePath = alternativePath(testContext.getTestInstance().getClass(), false, cassandraDataSet.type().name());
+        alternativePath = alternativePath(testContext.getTestClass(), false, cassandraDataSet.type().name());
         if (testContext.getApplicationContext().getResource(alternativePath).exists()) {
           dataset = new String[]{alternativePath.replace(ResourceUtils.CLASSPATH_URL_PREFIX + "/", "")};
         } else {
