@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
     <name>cassandra-unit</name>
 
-    <description>Test framekork to develop with Cassandra</description>
+    <description>Test framework to develop with Cassandra</description>
     <build>
         <resources>
             <resource>
