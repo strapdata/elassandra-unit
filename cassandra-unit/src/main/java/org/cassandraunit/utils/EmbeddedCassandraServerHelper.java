@@ -116,7 +116,10 @@ public class EmbeddedCassandraServerHelper {
             }
         });
         try {
-            startupLatch.await(timeout, MILLISECONDS);
+            if (!startupLatch.await(timeout, MILLISECONDS)) {
+                log.error("Cassandra daemon did not start after " + MILLISECONDS + "ms. Consider increasing the timeout");
+                throw new AssertionError("Cassandra daemon did not start within timeout");
+            }
         } catch (InterruptedException e) {
             log.error("Interrupted waiting for Cassandra daemon to start:", e);
             throw new AssertionError(e);
