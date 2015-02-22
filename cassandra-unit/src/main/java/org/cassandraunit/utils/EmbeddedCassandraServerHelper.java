@@ -58,7 +58,7 @@ public class EmbeddedCassandraServerHelper {
     }
 
     public static void startEmbeddedCassandra(String yamlFile, String tmpDir) throws TTransportException, IOException, ConfigurationException {
-        startEmbeddedCassandra(yamlFile, DEFAULT_TMP_DIR, DEFAULT_STARTUP_TIMEOUT);
+        startEmbeddedCassandra(yamlFile, tmpDir, DEFAULT_STARTUP_TIMEOUT);
     }
 
     public static void startEmbeddedCassandra(String yamlFile, String tmpDir, long timeout) throws TTransportException, IOException, ConfigurationException {
@@ -82,7 +82,7 @@ public class EmbeddedCassandraServerHelper {
      *
      * @throws TTransportException
      * @throws IOException
-     * @throws InterruptedException
+     * @throws ConfigurationException
      */
     public static void startEmbeddedCassandra(File file, String tmpDir, long timeout) throws TTransportException, IOException, ConfigurationException {
         if (cassandraDaemon != null) {
@@ -187,17 +187,19 @@ public class EmbeddedCassandraServerHelper {
      */
     private static void copy(String resource, String directory) throws IOException {
         mkdir(directory);
-        InputStream is = EmbeddedCassandraServerHelper.class.getResourceAsStream(resource);
         String fileName = resource.substring(resource.lastIndexOf("/") + 1);
         File file = new File(directory + System.getProperty("file.separator") + fileName);
-        OutputStream out = new FileOutputStream(file);
-        byte buf[] = new byte[1024];
-        int len;
-        while ((len = is.read(buf)) > 0) {
-            out.write(buf, 0, len);
+        try (
+            InputStream is = EmbeddedCassandraServerHelper.class.getResourceAsStream(resource);
+            OutputStream out = new FileOutputStream(file)
+        ) {
+            byte buf[] = new byte[1024];
+            int len;
+            while ((len = is.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            out.close();
         }
-        out.close();
-        is.close();
     }
 
     /**
