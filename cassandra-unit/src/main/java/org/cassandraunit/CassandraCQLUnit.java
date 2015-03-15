@@ -36,6 +36,14 @@ public class CassandraCQLUnit extends BaseCassandraUnit {
         this.port = port;
     }
 
+    public CassandraCQLUnit(CQLDataSet dataSet, String configurationFileName, String hostIp, int port, long startUpTimeout) {
+        super(startUpTimeout);
+        this.dataSet = dataSet;
+        this.configurationFileName = configurationFileName;
+        this.hostIp = hostIp;
+        this.port = port;
+    }
+
     protected void load() {
         cluster = new Cluster.Builder().addContactPoints(hostIp).withPort(port).build();
         session = cluster.connect();
