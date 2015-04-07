@@ -1,9 +1,28 @@
 package org.cassandraunit.utils;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.ServerSocket;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
 import me.prettyprint.hector.api.factory.HFactory;
+
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.db.commitlog.CommitLog;
 import org.apache.cassandra.exceptions.ConfigurationException;
@@ -13,14 +32,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import org.yaml.snakeyaml.reader.UnicodeReader;
 
 /**
  * @author Jeremy Sevellec
@@ -32,14 +44,16 @@ public class EmbeddedCassandraServerHelper {
     public static final long DEFAULT_STARTUP_TIMEOUT = 10000;
     public static final String DEFAULT_TMP_DIR = "target/embeddedCassandra";
     public static final String DEFAULT_CASSANDRA_YML_FILE = "cu-cassandra.yaml";
+    public static final String CASSANDRA_RNDPORT_YML_FILE = "cu-cassandra-rndport.yaml";
     public static final String DEFAULT_LOG4J_CONFIG_FILE = "/log4j-embedded-cassandra.properties";
     private static final String INTERNAL_CASSANDRA_KEYSPACE = "system";
     private static final String INTERNAL_CASSANDRA_AUTH_KEYSPACE = "system_auth";
     private static final String INTERNAL_CASSANDRA_TRACES_KEYSPACE = "system_traces";
 
     private static CassandraDaemon cassandraDaemon = null;
-    static ExecutorService executor;
     private static String launchedYamlFile;
+    private static int nativeTransportPort;
+    private static int rpcPort;
 
     public static void startEmbeddedCassandra() throws TTransportException, IOException, InterruptedException, ConfigurationException {
         startEmbeddedCassandra(DEFAULT_STARTUP_TIMEOUT);
@@ -74,6 +88,7 @@ public class EmbeddedCassandraServerHelper {
         rmdir(tmpDir);
         copy(yamlFile, tmpDir);
         File file = new File(tmpDir + yamlFile);
+        replacePortZeroByARandomFreePort(file);
         startEmbeddedCassandra(file, tmpDir, timeout);
     }
 
@@ -106,7 +121,7 @@ public class EmbeddedCassandraServerHelper {
 
         cleanupAndLeaveDirs();
         final CountDownLatch startupLatch = new CountDownLatch(1);
-        executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -123,6 +138,8 @@ public class EmbeddedCassandraServerHelper {
         } catch (InterruptedException e) {
             log.error("Interrupted waiting for Cassandra daemon to start:", e);
             throw new AssertionError(e);
+        } finally {
+            executor.shutdown();
         }
     }
 
@@ -149,6 +166,24 @@ public class EmbeddedCassandraServerHelper {
      */
     public static void cleanEmbeddedCassandra() {
         dropKeyspaces();
+    }
+
+    /**
+     * Get cassandra RPC port.
+     *
+     * @return the cassandra RPC port
+     */
+    public static int getRpcPort() {
+        return rpcPort;
+    }
+
+    /**
+     * Get cassandra native transport port.
+     *
+     * @return the cassandra native transport port.
+     */
+    public static int getNativeTransportPort() {
+        return nativeTransportPort;
     }
 
     private static void dropKeyspaces() {
@@ -243,6 +278,66 @@ public class EmbeddedCassandraServerHelper {
     public static void mkdirs() {
         DatabaseDescriptor.createAllDirectories();
 
+    }
+
+    private static void replacePortZeroByARandomFreePort(File cassandraConfig) throws IOException {
+        // read the complete file as a string and replace the ports if zero, dump back the changed string
+        String yaml = readYamlFileToString(cassandraConfig);
+
+        Pattern p = Pattern.compile("^([a-z_]+)_port:\\s*([0-9]+)\\s*$", Pattern.MULTILINE);
+        Matcher m = p.matcher(yaml);
+        StringBuffer sb = new StringBuffer();
+        boolean replaced = false;
+        while (m.find()) {
+            String portName = m.group(1);
+            int portValue = Integer.parseInt(m.group(2));
+            String replacement;
+            if (portValue == 0) {
+                portValue = findUnusedLocalPort();
+                replacement = portName + "_port: " + portValue;
+                replaced = true;
+            } else {
+                replacement = m.group(0);
+            }
+            if (portName.equals("native_transport")) {
+                nativeTransportPort = portValue;
+            } else if (portName.equals("rpc")) {
+                rpcPort = portValue;
+            }
+            m.appendReplacement(sb, replacement);
+        }
+        m.appendTail(sb);
+        if (replaced) {
+            writeStringToYamlFile(cassandraConfig, sb.toString());
+        }
+    }
+
+    private static String readYamlFileToString(File yamlFile) throws IOException {
+        // using UnicodeReader to read the correct encoding according to BOM
+        try (UnicodeReader reader = new UnicodeReader(new FileInputStream(yamlFile))) {
+            StringBuffer sb = new StringBuffer();
+            char[] cbuf = new char[1024];
+
+            int readden = reader.read(cbuf);
+            while(readden >= 0) {
+                sb.append(cbuf, 0, readden);
+                readden = reader.read(cbuf);
+            }
+            return sb.toString();
+        }
+    }
+
+    private static void writeStringToYamlFile(File yamlFile, String yaml) throws IOException {
+        // write utf-8 without BOM
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(yamlFile), "utf-8")) {
+            writer.write(yaml);
+        }
+    }
+
+    private static int findUnusedLocalPort() throws IOException {
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            return serverSocket.getLocalPort();
+        }
     }
 
 }
