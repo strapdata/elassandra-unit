@@ -14,7 +14,7 @@ import static org.junit.Assert.assertThat;
 public class CassandraAbstractTestCaseCustomYamlTest {
 
 	@Rule
-	public CassandraUnit cassandra = new CassandraUnit(new ClassPathXmlDataSet("xml/dataSetDefaultValues.xml"), "another-cassandra.yaml", "localhost:9175");
+	public CassandraUnit cassandra = new CassandraUnit(new ClassPathXmlDataSet("xml/dataSetDefaultValues.xml"), "another-cassandra.yaml");
 	
 	@Test
     @Ignore // Does not support the start of two configurations in the same JVM Instance

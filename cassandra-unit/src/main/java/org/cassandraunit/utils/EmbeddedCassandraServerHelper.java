@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -54,6 +55,7 @@ public class EmbeddedCassandraServerHelper {
 
     private static CassandraDaemon cassandraDaemon = null;
     private static String launchedYamlFile;
+    private static String host;
     private static int nativeTransportPort;
     private static int rpcPort;
 
@@ -90,7 +92,7 @@ public class EmbeddedCassandraServerHelper {
         rmdir(tmpDir);
         copy(yamlFile, tmpDir);
         File file = new File(tmpDir + yamlFile);
-        replacePortZeroByARandomFreePort(file);
+        readAndAdaptYaml(file);
         startEmbeddedCassandra(file, tmpDir, timeout);
     }
 
@@ -171,7 +173,16 @@ public class EmbeddedCassandraServerHelper {
     }
 
     /**
-     * Get cassandra RPC port.
+     * Get embedded cassandra host.
+     * 
+     * @return the cassandra host
+     */
+    public static String getHost() {
+        return host;
+    }
+    
+    /**
+     * Get embedded cassandra RPC port.
      *
      * @return the cassandra RPC port
      */
@@ -180,7 +191,7 @@ public class EmbeddedCassandraServerHelper {
     }
 
     /**
-     * Get cassandra native transport port.
+     * Get embedded cassandra native transport port.
      *
      * @return the cassandra native transport port.
      */
@@ -282,33 +293,43 @@ public class EmbeddedCassandraServerHelper {
 
     }
 
-    private static void replacePortZeroByARandomFreePort(File cassandraConfig) throws IOException {
-        // read the complete file as a string and replace the ports if zero, dump back the changed string
+    private static void readAndAdaptYaml(File cassandraConfig) throws IOException {
+        // read the complete file as a string and replace the ports if zero, dump back the changed string.
+        // not using snakeyaml so as to preserve the comments 
         String yaml = readYamlFileToString(cassandraConfig);
 
-        Pattern p = Pattern.compile("^([a-z_]+)_port:\\s*([0-9]+)\\s*$", Pattern.MULTILINE);
-        Matcher m = p.matcher(yaml);
+        Pattern hostPattern = Pattern.compile("^listen_address:\\s*([^ ]+)\\s*$", Pattern.MULTILINE);
+        Matcher hostMatcher = hostPattern.matcher(yaml);
+        if (hostMatcher.find()) {
+            host = hostMatcher.group(1);
+        } else {
+            host = InetAddress.getLocalHost().getHostAddress();            
+        }
+        
+        Pattern portPattern = Pattern.compile("^([a-z_]+)_port:\\s*([0-9]+)\\s*$", Pattern.MULTILINE);
+        Matcher portMatcher = portPattern.matcher(yaml);
         StringBuffer sb = new StringBuffer();
         boolean replaced = false;
-        while (m.find()) {
-            String portName = m.group(1);
-            int portValue = Integer.parseInt(m.group(2));
+        while (portMatcher.find()) {
+            String portName = portMatcher.group(1);
+            int portValue = Integer.parseInt(portMatcher.group(2));
             String replacement;
             if (portValue == 0) {
                 portValue = findUnusedLocalPort();
                 replacement = portName + "_port: " + portValue;
                 replaced = true;
             } else {
-                replacement = m.group(0);
+                replacement = portMatcher.group(0);
             }
             if (portName.equals("native_transport")) {
                 nativeTransportPort = portValue;
             } else if (portName.equals("rpc")) {
                 rpcPort = portValue;
             }
-            m.appendReplacement(sb, replacement);
+            portMatcher.appendReplacement(sb, replacement);
         }
-        m.appendTail(sb);
+        portMatcher.appendTail(sb);
+        
         if (replaced) {
             writeStringToYamlFile(cassandraConfig, sb.toString());
         }

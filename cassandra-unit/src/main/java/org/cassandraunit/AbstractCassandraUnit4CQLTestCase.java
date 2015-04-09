@@ -31,10 +31,6 @@ public abstract class AbstractCassandraUnit4CQLTestCase {
         cassandraUnit = new CassandraCQLUnit(getDataSet(), configurationFileName);
     }
 
-    public AbstractCassandraUnit4CQLTestCase(String configurationFileName, String hostIp, int port) {
-        cassandraUnit = new CassandraCQLUnit(getDataSet(), configurationFileName, hostIp, port);
-    }
-
 	@Before
     public void before() throws Exception {
         if (!initialized) {

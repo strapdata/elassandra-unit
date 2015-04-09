@@ -15,7 +15,7 @@ import static org.junit.Assert.assertThat;
 public class CassandraStartCustomYamlTest extends AbstractCassandraUnit4TestCase {
 
 	public CassandraStartCustomYamlTest() {
-		super("another-cassandra.yaml", "localhost:9175");
+		super("another-cassandra.yaml");
 	}
 
 	@Test
