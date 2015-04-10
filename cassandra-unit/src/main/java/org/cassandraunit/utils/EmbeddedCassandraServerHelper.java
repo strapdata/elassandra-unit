@@ -13,6 +13,7 @@ import java.io.Writer;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +34,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.reader.UnicodeReader;
 
 /**
@@ -55,6 +57,7 @@ public class EmbeddedCassandraServerHelper {
 
     private static CassandraDaemon cassandraDaemon = null;
     private static String launchedYamlFile;
+    private static String clusterName;
     private static String host;
     private static int nativeTransportPort;
     private static int rpcPort;
@@ -172,6 +175,15 @@ public class EmbeddedCassandraServerHelper {
         dropKeyspaces();
     }
 
+    /**
+     * Get the embedded cassandra cluster name
+     * 
+     * @return the cluster name
+     */
+    public static String getClusterName() {
+        return clusterName;
+    }
+    
     /**
      * Get embedded cassandra host.
      * 
@@ -294,18 +306,12 @@ public class EmbeddedCassandraServerHelper {
     }
 
     private static void readAndAdaptYaml(File cassandraConfig) throws IOException {
-        // read the complete file as a string and replace the ports if zero, dump back the changed string.
-        // not using snakeyaml so as to preserve the comments 
         String yaml = readYamlFileToString(cassandraConfig);
 
-        Pattern hostPattern = Pattern.compile("^listen_address:\\s*([^ ]+)\\s*$", Pattern.MULTILINE);
-        Matcher hostMatcher = hostPattern.matcher(yaml);
-        if (hostMatcher.find()) {
-            host = hostMatcher.group(1);
-        } else {
-            host = InetAddress.getLocalHost().getHostAddress();            
-        }
-        
+        // read properties
+        readYamlProperties(yaml);
+
+        // read the ports and replace them if zero. dump back the changed string, preserving comments (thus no snakeyaml)
         Pattern portPattern = Pattern.compile("^([a-z_]+)_port:\\s*([0-9]+)\\s*$", Pattern.MULTILINE);
         Matcher portMatcher = portPattern.matcher(yaml);
         StringBuffer sb = new StringBuffer();
@@ -329,10 +335,23 @@ public class EmbeddedCassandraServerHelper {
             portMatcher.appendReplacement(sb, replacement);
         }
         portMatcher.appendTail(sb);
-        
+
         if (replaced) {
             writeStringToYamlFile(cassandraConfig, sb.toString());
         }
+    }
+    
+    private static void readYamlProperties(String cassandraConfigContent) throws IOException {
+        Yaml yaml = new Yaml();
+        
+        @SuppressWarnings("unchecked")
+        Map<String, Object> map = (Map<String, Object>) yaml.load(cassandraConfigContent);
+        
+        Object hostValue = map.get("listen_address");
+        host = hostValue != null ? hostValue.toString() : InetAddress.getLocalHost().getHostAddress(); 
+        
+        Object clusterValue = map.get("cluster_name");
+        clusterName = clusterValue.toString();
     }
 
     private static String readYamlFileToString(File yamlFile) throws IOException {

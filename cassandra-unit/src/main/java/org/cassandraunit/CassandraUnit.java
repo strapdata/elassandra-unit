@@ -12,7 +12,7 @@ public class CassandraUnit extends BaseCassandraUnit  {
     public Keyspace keyspace;
     private DataSet dataSet;
 
-    public static String clusterName = "TestCluster";
+    public static String clusterName;
     public static String host;
 
     public CassandraUnit(DataSet dataSet) {
@@ -26,7 +26,9 @@ public class CassandraUnit extends BaseCassandraUnit  {
 
     @Override
     protected void load() {
-        host = EmbeddedCassandraServerHelper.getHost() + ":" + EmbeddedCassandraServerHelper.getRpcPort(); 
+        host = EmbeddedCassandraServerHelper.getHost() + ":" + EmbeddedCassandraServerHelper.getRpcPort();
+        clusterName = EmbeddedCassandraServerHelper.getClusterName();
+
         DataLoader dataLoader = new DataLoader(clusterName, host);
         dataLoader.load(dataSet);
 
