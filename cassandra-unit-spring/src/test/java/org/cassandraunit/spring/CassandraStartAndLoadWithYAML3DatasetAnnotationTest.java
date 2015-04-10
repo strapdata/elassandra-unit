@@ -31,7 +31,7 @@ import static org.junit.Assert.assertThat;
 @ContextConfiguration(value = { "classpath:/default-context.xml" })
 @TestExecutionListeners({ CassandraUnitTestExecutionListener.class })
 @CassandraDataSet(value = { "cql/dataset1.yaml", "cql/dataset2.yaml", "cql/dataset3.yaml" }, type = DataSetFileExtensionEnum.yaml)
-@EmbeddedCassandra(port = 9171)
+@EmbeddedCassandra
 public class CassandraStartAndLoadWithYAML3DatasetAnnotationTest {
 
   @Test

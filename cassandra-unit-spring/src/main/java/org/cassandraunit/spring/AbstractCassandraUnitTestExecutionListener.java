@@ -41,10 +41,10 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
       initialized = true;
     }
 
-    String clusterName = Preconditions.checkNotNull(embeddedCassandra.clusterName(), "@EmbeddedCassandra host must not be null");
-    String host = Preconditions.checkNotNull(embeddedCassandra.host(), "@EmbeddedCassandra clusterName must not be null");
-    int port = Preconditions.checkNotNull(embeddedCassandra.port(), "@EmbeddedCassandra port must not be null");
-    Preconditions.checkArgument(port > 0, "@EmbeddedCassandra port must not be > 0");
+    String clusterName = EmbeddedCassandraServerHelper.getClusterName(); 
+    String host = EmbeddedCassandraServerHelper.getHost();
+    int rpcPort = EmbeddedCassandraServerHelper.getRpcPort();
+    int nativeTransportPort = EmbeddedCassandraServerHelper.getNativeTransportPort();
 
     CassandraDataSet cassandraDataSet = AnnotationUtils.findAnnotation(testContext.getTestClass(), CassandraDataSet.class);
     if (cassandraDataSet != null) {
@@ -57,7 +57,7 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
           dataset = dataSetLocations(testContext, cassandraDataSet);
           datasetIterator = dataset.listIterator();
 
-          Cluster cluster = new Cluster.Builder().addContactPoints(host).withPort(port).build();
+          Cluster cluster = new Cluster.Builder().addContactPoints(host).withPort(nativeTransportPort).build();
           Session session = cluster.connect();
           
           CQLDataLoader cqlDataLoader = new CQLDataLoader(session);
@@ -70,7 +70,7 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
         default:
           dataset = dataSetLocations(testContext, cassandraDataSet);
           datasetIterator = dataset.listIterator();
-          DataLoader dataLoader = new DataLoader(clusterName, host + ":" + port);
+          DataLoader dataLoader = new DataLoader(clusterName, host + ":" + rpcPort);
           while (datasetIterator.hasNext()) {
             String next = datasetIterator.next();
             boolean dropAndCreateKeyspace = datasetIterator.previousIndex() == 0;
