@@ -10,10 +10,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,7 +32,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.reader.UnicodeReader;
 
 /**
@@ -57,10 +54,6 @@ public class EmbeddedCassandraServerHelper {
 
     private static CassandraDaemon cassandraDaemon = null;
     private static String launchedYamlFile;
-    private static String clusterName;
-    private static String host;
-    private static int nativeTransportPort;
-    private static int rpcPort;
 
     public static void startEmbeddedCassandra() throws TTransportException, IOException, InterruptedException, ConfigurationException {
         startEmbeddedCassandra(DEFAULT_STARTUP_TIMEOUT);
@@ -181,7 +174,7 @@ public class EmbeddedCassandraServerHelper {
      * @return the cluster name
      */
     public static String getClusterName() {
-        return clusterName;
+        return DatabaseDescriptor.getClusterName();
     }
     
     /**
@@ -190,7 +183,7 @@ public class EmbeddedCassandraServerHelper {
      * @return the cassandra host
      */
     public static String getHost() {
-        return host;
+        return DatabaseDescriptor.getRpcAddress().getHostName();
     }
     
     /**
@@ -199,7 +192,7 @@ public class EmbeddedCassandraServerHelper {
      * @return the cassandra RPC port
      */
     public static int getRpcPort() {
-        return rpcPort;
+        return DatabaseDescriptor.getRpcPort();
     }
 
     /**
@@ -208,7 +201,7 @@ public class EmbeddedCassandraServerHelper {
      * @return the cassandra native transport port.
      */
     public static int getNativeTransportPort() {
-        return nativeTransportPort;
+        return DatabaseDescriptor.getNativeTransportPort();
     }
 
     private static void dropKeyspaces() {
@@ -308,9 +301,6 @@ public class EmbeddedCassandraServerHelper {
     private static void readAndAdaptYaml(File cassandraConfig) throws IOException {
         String yaml = readYamlFileToString(cassandraConfig);
 
-        // read properties
-        readYamlProperties(yaml);
-
         // read the ports and replace them if zero. dump back the changed string, preserving comments (thus no snakeyaml)
         Pattern portPattern = Pattern.compile("^([a-z_]+)_port:\\s*([0-9]+)\\s*$", Pattern.MULTILINE);
         Matcher portMatcher = portPattern.matcher(yaml);
@@ -327,11 +317,6 @@ public class EmbeddedCassandraServerHelper {
             } else {
                 replacement = portMatcher.group(0);
             }
-            if (portName.equals("native_transport")) {
-                nativeTransportPort = portValue;
-            } else if (portName.equals("rpc")) {
-                rpcPort = portValue;
-            }
             portMatcher.appendReplacement(sb, replacement);
         }
         portMatcher.appendTail(sb);
@@ -341,19 +326,6 @@ public class EmbeddedCassandraServerHelper {
         }
     }
     
-    private static void readYamlProperties(String cassandraConfigContent) throws IOException {
-        Yaml yaml = new Yaml();
-        
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) yaml.load(cassandraConfigContent);
-        
-        Object hostValue = map.get("listen_address");
-        host = hostValue != null ? hostValue.toString() : InetAddress.getLocalHost().getHostAddress(); 
-        
-        Object clusterValue = map.get("cluster_name");
-        clusterName = clusterValue.toString();
-    }
-
     private static String readYamlFileToString(File yamlFile) throws IOException {
         // using UnicodeReader to read the correct encoding according to BOM
         try (UnicodeReader reader = new UnicodeReader(new FileInputStream(yamlFile))) {
