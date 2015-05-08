@@ -10,6 +10,7 @@ import org.cassandraunit.dataset.ClassPathDataSet;
 import org.cassandraunit.dataset.cql.ClassPathCQLDataSet;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
@@ -28,7 +29,7 @@ import com.google.common.base.Preconditions;
  * 
  * @author Gaëtan Le Brun
  */
-public abstract class AbstractCassandraUnitTestExecutionListener extends AbstractTestExecutionListener {
+public abstract class AbstractCassandraUnitTestExecutionListener extends AbstractTestExecutionListener implements Ordered {
   private static final org.slf4j.Logger LOGGER      = LoggerFactory.getLogger(CassandraUnitTestExecutionListener.class);
   private static       boolean          initialized = false;
 
@@ -41,10 +42,10 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
       initialized = true;
     }
 
-    String clusterName = Preconditions.checkNotNull(embeddedCassandra.clusterName(), "@EmbeddedCassandra host must not be null");
-    String host = Preconditions.checkNotNull(embeddedCassandra.host(), "@EmbeddedCassandra clusterName must not be null");
-    int port = Preconditions.checkNotNull(embeddedCassandra.port(), "@EmbeddedCassandra port must not be null");
-    Preconditions.checkArgument(port > 0, "@EmbeddedCassandra port must not be > 0");
+    String clusterName = EmbeddedCassandraServerHelper.getClusterName(); 
+    String host = EmbeddedCassandraServerHelper.getHost();
+    int rpcPort = EmbeddedCassandraServerHelper.getRpcPort();
+    int nativeTransportPort = EmbeddedCassandraServerHelper.getNativeTransportPort();
 
     CassandraDataSet cassandraDataSet = AnnotationUtils.findAnnotation(testContext.getTestClass(), CassandraDataSet.class);
     if (cassandraDataSet != null) {
@@ -57,7 +58,7 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
           dataset = dataSetLocations(testContext, cassandraDataSet);
           datasetIterator = dataset.listIterator();
 
-          Cluster cluster = new Cluster.Builder().addContactPoints(host).withPort(port).build();
+          Cluster cluster = new Cluster.Builder().addContactPoints(host).withPort(nativeTransportPort).build();
           Session session = cluster.connect();
           
           CQLDataLoader cqlDataLoader = new CQLDataLoader(session);
@@ -70,7 +71,7 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
         default:
           dataset = dataSetLocations(testContext, cassandraDataSet);
           datasetIterator = dataset.listIterator();
-          DataLoader dataLoader = new DataLoader(clusterName, host + ":" + port);
+          DataLoader dataLoader = new DataLoader(clusterName, host + ":" + rpcPort);
           while (datasetIterator.hasNext()) {
             String next = datasetIterator.next();
             boolean dropAndCreateKeyspace = datasetIterator.previousIndex() == 0;
@@ -111,4 +112,10 @@ public abstract class AbstractCassandraUnitTestExecutionListener extends Abstrac
     }
   }
 
+  @Override
+  public int getOrder() {
+    // since spring 4.1 the default-order is LOWEST_PRECEDENCE. But we want to start EmbeddedCassandra even before
+    // the springcontext such that beans can connect to the started cassandra
+    return 0;
+  }
 }
