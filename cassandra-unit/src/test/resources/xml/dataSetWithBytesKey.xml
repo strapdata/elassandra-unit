@@ -3,7 +3,7 @@
 	<name>beautifulKeyspaceName</name>
 	<columnFamilies>
 		<columnFamily>
-			<name>test</name>
+			<name>MyColumnFamily</name>
 			<type>STANDARD</type>
 			<keyType>BytesType</keyType>
 			<comparatorType>UTF8Type</comparatorType>

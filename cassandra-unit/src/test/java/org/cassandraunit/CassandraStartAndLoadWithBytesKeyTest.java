@@ -28,8 +28,7 @@ public class CassandraStartAndLoadWithBytesKeyTest {
 	public void shouldGetBytesKey() {
 		CqlQuery<byte[], String, byte[]> query = new CqlQuery<byte[], String, byte[]>(cassandraUnit.keyspace,
 				BytesArraySerializer.get(), StringSerializer.get(), BytesArraySerializer.get());
-		query.setCqlVersion("3");
-		query.setQuery("SELECT * FROM test");
+		query.setQuery("SELECT * FROM MyColumnFamily");
 		QueryResult<CqlRows<byte[], String, byte[]>> result = query.execute();
 		List<Row<byte[], String, byte[]>> rows = result.get().getList();
 		Row row = rows.get(0);
