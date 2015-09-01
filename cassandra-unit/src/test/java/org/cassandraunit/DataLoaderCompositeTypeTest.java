@@ -10,6 +10,7 @@ import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.beans.ColumnSlice;
 import me.prettyprint.hector.api.beans.Composite;
+import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.QueryResult;
@@ -19,6 +20,10 @@ import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.cassandraunit.utils.MockDataSetHelper;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DataLoaderCompositeTypeTest {
 
@@ -35,10 +40,14 @@ public class DataLoaderCompositeTypeTest {
 		dataLoader.load(MockDataSetHelper.getMockDataSetWithCompositeType());
 		/* test */
 		Cluster cluster = HFactory.getOrCreateCluster(clusterName, host);
-		assertThat(cluster.describeKeyspace("compositeKeyspace").getCfDefs().get(0).getName(),
-				is("columnFamilyWithCompositeType"));
+		List<ColumnFamilyDefinition> compositeKeyspace = cluster.describeKeyspace("compositeKeyspace").getCfDefs();
+
+		Map<String, ColumnFamilyDefinition> columnFamilyDefinitionMap = getColumFamilyDefinitionAsMap(compositeKeyspace);
+
+		assertThat(columnFamilyDefinitionMap.containsKey("columnFamilyWithCompositeType"), is(true));
+		ColumnFamilyDefinition columnFamilyDefinition = columnFamilyDefinitionMap.get("columnFamilyWithCompositeType");
 		assertThat(
-				cluster.describeKeyspace("compositeKeyspace").getCfDefs().get(0).getComparatorType().getTypeName(),
+				columnFamilyDefinition.getComparatorType().getTypeName(),
 				is(ComparatorType
 						.getByClassName(
 								"CompositeType(org.apache.cassandra.db.marshal.LongType,org.apache.cassandra.db.marshal.UTF8Type,org.apache.cassandra.db.marshal.IntegerType)")
@@ -93,6 +102,14 @@ public class DataLoaderCompositeTypeTest {
 
 	}
 
+	private Map<String, ColumnFamilyDefinition> getColumFamilyDefinitionAsMap(List<ColumnFamilyDefinition> compositeKeyspace) {
+		Map<String,ColumnFamilyDefinition> map = new HashMap<>();
+		for (ColumnFamilyDefinition columnFamilyDefinition : compositeKeyspace) {
+			map.put(columnFamilyDefinition.getName(),columnFamilyDefinition);
+		}
+		return map;
+	}
+
 	@Test
 	public void shouldCreateKeyspaceAndLoadDataWithRowKeyCompositeType() throws Exception {
 		String clusterName = "TestClusterCompositeType02";
@@ -101,10 +118,11 @@ public class DataLoaderCompositeTypeTest {
 		dataLoader.load(MockDataSetHelper.getMockDataSetWithCompositeType());
 		/* test */
 		Cluster cluster = HFactory.getOrCreateCluster(clusterName, host);
-		assertThat(cluster.describeKeyspace("compositeKeyspace").getCfDefs().get(1).getName(),
-				is("columnFamilyWithRowKeyCompositeType"));
+		List<ColumnFamilyDefinition> compositeKeyspace = cluster.describeKeyspace("compositeKeyspace").getCfDefs();
+		Map<String, ColumnFamilyDefinition> columFamilyDefinitionAsMap = getColumFamilyDefinitionAsMap(compositeKeyspace);
+		assertThat(columFamilyDefinitionAsMap.containsKey("columnFamilyWithRowKeyCompositeType"), is(true));
 		assertThat(
-				cluster.describeKeyspace("compositeKeyspace").getCfDefs().get(1).getKeyValidationClass(),
+				columFamilyDefinitionAsMap.get("columnFamilyWithRowKeyCompositeType").getKeyValidationClass(),
 				is("org.apache.cassandra.db.marshal.CompositeType(org.apache.cassandra.db.marshal.LongType,org.apache.cassandra.db.marshal.UTF8Type)"));
 
 		Keyspace keyspace = HFactory.createKeyspace("compositeKeyspace", cluster);
