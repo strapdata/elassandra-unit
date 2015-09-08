@@ -21,4 +21,5 @@ import java.lang.annotation.Target;
 public @interface EmbeddedCassandra {
   // cassandra configuration file
   String configuration() default EmbeddedCassandraServerHelper.DEFAULT_CASSANDRA_YML_FILE;
+  long timeout() default EmbeddedCassandraServerHelper.DEFAULT_STARTUP_TIMEOUT;
 }
