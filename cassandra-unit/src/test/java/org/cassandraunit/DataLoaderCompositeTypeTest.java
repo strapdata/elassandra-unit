@@ -40,6 +40,7 @@ public class DataLoaderCompositeTypeTest {
 		dataLoader.load(MockDataSetHelper.getMockDataSetWithCompositeType());
 		/* test */
 		Cluster cluster = HFactory.getOrCreateCluster(clusterName, host);
+
 		List<ColumnFamilyDefinition> compositeKeyspace = cluster.describeKeyspace("compositeKeyspace").getCfDefs();
 
 		Map<String, ColumnFamilyDefinition> columnFamilyDefinitionMap = getColumFamilyDefinitionAsMap(compositeKeyspace);
@@ -48,6 +49,7 @@ public class DataLoaderCompositeTypeTest {
 		ColumnFamilyDefinition columnFamilyDefinition = columnFamilyDefinitionMap.get("columnFamilyWithCompositeType");
 		assertThat(
 				columnFamilyDefinition.getComparatorType().getTypeName(),
+
 				is(ComparatorType
 						.getByClassName(
 								"CompositeType(org.apache.cassandra.db.marshal.LongType,org.apache.cassandra.db.marshal.UTF8Type,org.apache.cassandra.db.marshal.IntegerType)")
@@ -118,6 +120,7 @@ public class DataLoaderCompositeTypeTest {
 		dataLoader.load(MockDataSetHelper.getMockDataSetWithCompositeType());
 		/* test */
 		Cluster cluster = HFactory.getOrCreateCluster(clusterName, host);
+
 		List<ColumnFamilyDefinition> compositeKeyspace = cluster.describeKeyspace("compositeKeyspace").getCfDefs();
 		Map<String, ColumnFamilyDefinition> columFamilyDefinitionAsMap = getColumFamilyDefinitionAsMap(compositeKeyspace);
 		assertThat(columFamilyDefinitionAsMap.containsKey("columnFamilyWithRowKeyCompositeType"), is(true));
