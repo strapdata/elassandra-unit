@@ -3,34 +3,46 @@ package org.cassandraunit;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.junit.rules.ExternalResource;
 
+import com.datastax.driver.core.SocketOptions;
+
 /**
  * @author Marcin Szymaniuk
  */
 public abstract class BaseCassandraUnit extends ExternalResource {
-    
-    protected String configurationFileName;
-    protected long startupTimeout;
 
-    public BaseCassandraUnit() {
-        this(EmbeddedCassandraServerHelper.DEFAULT_STARTUP_TIMEOUT);
-    }
-    
-    public BaseCassandraUnit(long startupTimeout) {
-        this.startupTimeout = startupTimeout;
-    }
+	protected String configurationFileName;
+	protected long startupTimeoutMillis;
+	protected int readTimeoutMillis = 12000;
 
-    @Override
-    protected void before() throws Exception {
-        /* start an embedded Cassandra */
-        if (configurationFileName != null) {
-            EmbeddedCassandraServerHelper.startEmbeddedCassandra(configurationFileName, startupTimeout);
-        } else {
-            EmbeddedCassandraServerHelper.startEmbeddedCassandra(startupTimeout);
-        }
+	public BaseCassandraUnit() {
+		this(EmbeddedCassandraServerHelper.DEFAULT_STARTUP_TIMEOUT);
+	}
 
-        /* create structure and load data */
-        load();
-    }
+	public BaseCassandraUnit(long startupTimeoutMillis) {
+		this.startupTimeoutMillis = startupTimeoutMillis;
+	}
 
-    protected abstract void load();
+	@Override
+	protected void before() throws Exception {
+		/* start an embedded Cassandra */
+		if (configurationFileName != null) {
+			EmbeddedCassandraServerHelper.startEmbeddedCassandra(configurationFileName, startupTimeoutMillis);
+		} else {
+			EmbeddedCassandraServerHelper.startEmbeddedCassandra(startupTimeoutMillis);
+		}
+
+		/* create structure and load data */
+		load();
+	}
+
+	protected abstract void load();
+
+	/**
+	 * Gets a base SocketOptions with an overridden readTimeoutMillis.
+	 */
+	protected SocketOptions getSocketOptions() {
+		SocketOptions socketOptions = new SocketOptions();
+		socketOptions.setReadTimeoutMillis(this.readTimeoutMillis);
+		return socketOptions;
+	}
 }
