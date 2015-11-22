@@ -5,63 +5,84 @@ import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
+
 /**
  * @author Marcin Szymaniuk
  * @author Jeremy Sevellec
+ * @author David Webb
  */
 public class CassandraCQLUnit extends BaseCassandraUnit {
-    private CQLDataSet dataSet;
+	private CQLDataSet dataSet;
 
-    public Session session;
-    public Cluster cluster;
+	public Session session;
+	public Cluster cluster;
 
-    public CassandraCQLUnit(CQLDataSet dataSet) {
-        this.dataSet = dataSet;
-    }
+	public CassandraCQLUnit(CQLDataSet dataSet) {
+		this.dataSet = dataSet;
+	}
 
-    public CassandraCQLUnit(CQLDataSet dataSet, String configurationFileName) {
-        this(dataSet);
-        this.configurationFileName = configurationFileName;
-    }
+	public CassandraCQLUnit(CQLDataSet dataSet, int readTimeoutMillis) {
+		this.dataSet = dataSet;
+		this.readTimeoutMillis = readTimeoutMillis;
+	}
 
-    // The former constructors with hostip and port have been removed. Now host+port is directly read out of the provided
-    // configurationFile(Name). You may also use EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE to select 
-    // random (free) ports for EmbeddedCassandra, such that you can start multiple embedded cassandras on the same host
-    // (but not in the same JVM).
+	public CassandraCQLUnit(CQLDataSet dataSet, String configurationFileName) {
+		this(dataSet);
+		this.configurationFileName = configurationFileName;
+	}
 
-    public CassandraCQLUnit(CQLDataSet dataSet, String configurationFileName, long startUpTimeout) {
-        super(startUpTimeout);
-        this.dataSet = dataSet;
-        this.configurationFileName = configurationFileName;
-    }
+	public CassandraCQLUnit(CQLDataSet dataSet, String configurationFileName, int readTimeoutMillis) {
+		this(dataSet);
+		this.configurationFileName = configurationFileName;
+		this.readTimeoutMillis = readTimeoutMillis;
+	}
 
-    @Override
-    protected void load() {
-        String hostIp = EmbeddedCassandraServerHelper.getHost();
-        int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
-        cluster = new Cluster.Builder().addContactPoints(hostIp).withPort(port).build();
-        session = cluster.connect();
-        CQLDataLoader dataLoader = new CQLDataLoader(session);
-        dataLoader.load(dataSet);
-        session = dataLoader.getSession();
-    }
+	// The former constructors with hostip and port have been removed. Now host+port is directly read out of the provided
+	// configurationFile(Name). You may also use EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE to select
+	// random (free) ports for EmbeddedCassandra, such that you can start multiple embedded cassandras on the same host
+	// (but not in the same JVM).
 
-    @Override
-    protected void after() {
-        super.after();
-        try (Cluster c = cluster; Session s = session) {
-            session = null;
-            cluster = null;
-        }
-    }
+	public CassandraCQLUnit(CQLDataSet dataSet, String configurationFileName, long startUpTimeoutMillis) {
+		super(startUpTimeoutMillis);
+		this.dataSet = dataSet;
+		this.configurationFileName = configurationFileName;
+	}
 
-    // Getters for those who do not like to directly access fields
+	public CassandraCQLUnit(CQLDataSet dataSet, String configurationFileName, long startUpTimeoutMillis, int readTimeoutMillis) {
+		super(startUpTimeoutMillis);
+		this.dataSet = dataSet;
+		this.configurationFileName = configurationFileName;
+		this.readTimeoutMillis = readTimeoutMillis;
+	}
 
-    public Session getSession() {
-        return session;
-    }
+	@Override
+	protected void load() {
+		String hostIp = EmbeddedCassandraServerHelper.getHost();
+		int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
+		cluster = new Cluster.Builder().addContactPoints(hostIp).withPort(port).withSocketOptions(getSocketOptions())
+				.build();
+		session = cluster.connect();
+		CQLDataLoader dataLoader = new CQLDataLoader(session);
+		dataLoader.load(dataSet);
+		session = dataLoader.getSession();
+	}
 
-    public Cluster getCluster() {
-        return cluster;
-    }
+	@Override
+	protected void after() {
+		super.after();
+		try (Cluster c = cluster; Session s = session) {
+			session = null;
+			cluster = null;
+		}
+	}
+
+	// Getters for those who do not like to directly access fields
+
+	public Session getSession() {
+		return session;
+	}
+
+	public Cluster getCluster() {
+		return cluster;
+	}
 }
