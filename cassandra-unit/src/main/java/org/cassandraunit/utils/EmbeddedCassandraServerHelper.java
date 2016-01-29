@@ -43,6 +43,8 @@ public class EmbeddedCassandraServerHelper {
     public static final String DEFAULT_LOG4J_CONFIG_FILE = "/log4j-embedded-cassandra.properties";
     private static final String INTERNAL_CASSANDRA_KEYSPACE = "system";
     private static final String INTERNAL_CASSANDRA_AUTH_KEYSPACE = "system_auth";
+    private static final String INTERNAL_CASSANDRA_DISTRIBUTED_KEYSPACE = "system_distributed";
+    private static final String INTERNAL_CASSANDRA_SCHEMA_KEYSPACE = "system_schema";
     private static final String INTERNAL_CASSANDRA_TRACES_KEYSPACE = "system_traces";
 
     private static CassandraDaemon cassandraDaemon = null;
@@ -256,10 +258,11 @@ public class EmbeddedCassandraServerHelper {
     private static boolean isSystemKeyspaceName(String keyspaceName) {
         return    INTERNAL_CASSANDRA_KEYSPACE.equals(keyspaceName) 
                || INTERNAL_CASSANDRA_AUTH_KEYSPACE.equals(keyspaceName)
+               || INTERNAL_CASSANDRA_DISTRIBUTED_KEYSPACE.equals(keyspaceName)
+               || INTERNAL_CASSANDRA_SCHEMA_KEYSPACE.equals(keyspaceName)
                || INTERNAL_CASSANDRA_TRACES_KEYSPACE.equals(keyspaceName);
     }
     
-
     private static void rmdir(String dir) throws IOException {
         File dirFile = new File(dir);
         if (dirFile.exists()) {
@@ -332,7 +335,6 @@ public class EmbeddedCassandraServerHelper {
 
     public static void mkdirs() {
         DatabaseDescriptor.createAllDirectories();
-
     }
 
     private static void readAndAdaptYaml(File cassandraConfig) throws IOException {

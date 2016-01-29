@@ -176,8 +176,6 @@ public class DataLoaderTest {
         assertThat(beautifulColumnFamily.getCompactionStrategy(),is("org.apache.cassandra.db.compaction.LeveledCompactionStrategy"));
         assertThat(beautifulColumnFamily.getCompactionStrategyOptions().get("sstable_size_in_mb"),is("10"));
         assertThat(beautifulColumnFamily.getGcGraceSeconds(),is(9999));
-        assertThat(beautifulColumnFamily.getMaxCompactionThreshold(),is(31));
-        assertThat(beautifulColumnFamily.getMinCompactionThreshold(),is(3));
         assertThat(beautifulColumnFamily.getReadRepairChance(),is(0.1d));
         assertThat(beautifulColumnFamily.isReplicateOnWrite(),is(false));
 
@@ -189,8 +187,10 @@ public class DataLoaderTest {
 		assertThat(amazingColumnFamily.getColumnType(), is(ColumnType.STANDARD));
 		assertThat(amazingColumnFamily.getComparatorType().getClassName(),
 				is(ComparatorType.UTF8TYPE.getClassName()));
-
-
+		assertThat(amazingColumnFamily.getCompactionStrategy(),is("org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy"));
+		assertThat(amazingColumnFamily.getMaxCompactionThreshold(),is(31));
+        assertThat(amazingColumnFamily.getMinCompactionThreshold(),is(3));
+        
         ColumnFamilyDefinition columnFamilyWithSecondaryIndex = columnFamilyDefinitionsMap.get("columnFamilyWithSecondaryIndex");
         assertThat(columnFamilyWithSecondaryIndex.getName(), is("columnFamilyWithSecondaryIndex"));
 		assertThat(columnFamilyWithSecondaryIndex.getColumnMetadata(), notNullValue());
