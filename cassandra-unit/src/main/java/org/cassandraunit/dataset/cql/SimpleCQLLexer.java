@@ -110,16 +110,24 @@ public class SimpleCQLLexer {
     		
     		case INQUOTESTRING:
 				statementUnderConstruction.append(c);
-    			if (c == '"' && peekAhead() != '"') {
-    				state = LexState.DEFAULT;
-    			}
-    			break;
+    			if (c == '"') {
+                    if (peekAhead() == '"') {
+                        statementUnderConstruction.append(getChar());
+                    } else {
+                        state = LexState.DEFAULT;
+                    }
+                }
+                break;
     		
 			case INSQUOTESTRING:
 				statementUnderConstruction.append(c);
-				if (c == '\'' && peekAhead() != '\'') {
-					state = LexState.DEFAULT;
-				}
+				if (c == '\'') {
+                    if (peekAhead() == '\'') {
+                        statementUnderConstruction.append(getChar());
+                    } else {
+                        state = LexState.DEFAULT;
+                    }
+                }
 				break;
 			}
 
