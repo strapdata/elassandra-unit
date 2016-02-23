@@ -115,8 +115,6 @@ public class MockDataSetHelper {
         compactionStrategyOptions.add(new CompactionStrategyOptionModel("sstable_size_in_mb", "10"));
         beautifulColumnFamily.setCompactionStrategyOptions(compactionStrategyOptions);
         beautifulColumnFamily.setGcGraceSeconds(9999);
-        beautifulColumnFamily.setMaxCompactionThreshold(31);
-        beautifulColumnFamily.setMinCompactionThreshold(3);
         beautifulColumnFamily.setReadRepairChance(0.1d);
         beautifulColumnFamily.setReplicationOnWrite(Boolean.FALSE);
 
@@ -154,6 +152,9 @@ public class MockDataSetHelper {
 		columnFamily2.setKeyType(ComparatorType.UTF8TYPE);
 		columnFamily2.setComparatorType(ComparatorType.UTF8TYPE);
 		columnFamily2.setDefaultColumnValueType(ComparatorType.UTF8TYPE);
+		columnFamily2.setCompactionStrategy("SizeTieredCompactionStrategy");
+		columnFamily2.setMaxCompactionThreshold(31);
+		columnFamily2.setMinCompactionThreshold(3);
 
 		columnFamilies.add(columnFamily2);
 

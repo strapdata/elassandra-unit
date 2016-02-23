@@ -54,7 +54,7 @@ public class CQLDataLoader {
                 ";keyspaceName=" + keyspaceName);
 
         if (dataSet.isKeyspaceDeletion()) {
-            String selectQuery = "SELECT keyspace_name FROM system.schema_keyspaces where keyspace_name='" + keyspaceName + "'";
+            String selectQuery = "SELECT keyspace_name FROM system_schema.keyspaces where keyspace_name='" + keyspaceName + "'";
             ResultSet keyspaceQueryResult = session.execute(selectQuery);
             if (keyspaceQueryResult.iterator().hasNext()) {
                 String dropQuery = "DROP KEYSPACE " + keyspaceName;
