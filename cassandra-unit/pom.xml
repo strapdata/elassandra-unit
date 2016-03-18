@@ -200,6 +200,10 @@
                     <groupId>org.hibernate</groupId>
                     <artifactId>hibernate-validator</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-all</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency> <!-- for cassandra-all because maven fails to reliably resolve the conflict with cassandra-driver-core -->
@@ -211,6 +215,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+            <version>4.0.27.Final</version>
         </dependency>
 
         <!-- hamcrest could be moved to the test-scope. But as the examples do not declare hamcrest-deps in their pom, 
