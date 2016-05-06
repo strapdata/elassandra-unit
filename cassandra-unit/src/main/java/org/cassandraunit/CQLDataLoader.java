@@ -54,13 +54,9 @@ public class CQLDataLoader {
                 ";keyspaceName=" + keyspaceName);
 
         if (dataSet.isKeyspaceDeletion()) {
-            String selectQuery = "SELECT keyspace_name FROM system_schema.keyspaces where keyspace_name='" + keyspaceName + "'";
-            ResultSet keyspaceQueryResult = session.execute(selectQuery);
-            if (keyspaceQueryResult.iterator().hasNext()) {
-                String dropQuery = "DROP KEYSPACE " + keyspaceName;
-                log.debug("executing : " + dropQuery);
-                session.execute(dropQuery);
-            }
+            String dropQuery = "DROP KEYSPACE IF EXISTS " + keyspaceName;
+            log.debug("executing : " + dropQuery);
+            session.execute(dropQuery);
         }
 
         if (dataSet.isKeyspaceCreation()) {
