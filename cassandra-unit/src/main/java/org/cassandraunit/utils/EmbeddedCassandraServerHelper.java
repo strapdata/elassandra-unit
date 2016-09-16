@@ -1,7 +1,10 @@
 package org.cassandraunit.utils;
 
+import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.TableMetadata;
 import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.hector.api.Cluster;
+import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
 import me.prettyprint.hector.api.factory.HFactory;
 import org.apache.cassandra.config.DatabaseDescriptor;
@@ -18,6 +21,8 @@ import org.yaml.snakeyaml.reader.UnicodeReader;
 import java.io.*;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -157,11 +162,22 @@ public class EmbeddedCassandraServerHelper {
                 "previous version was not fully operating");
     }
 
-     /**
+    /**
      * drop all keyspaces (expect system)
      */
     public static void cleanEmbeddedCassandra() {
         dropKeyspaces();
+    }
+
+    /**
+     * truncate data in keyspace, except specified tables
+     */
+    public static void cleanDataEmbeddedCassandra(String keyspace, String... excludedTables) {
+        if (hasHector()) {
+            cleanDataWithHector(keyspace, excludedTables);
+        } else {
+            cleanDataWithNativeDriver(keyspace, excludedTables);
+        }
     }
 
     /**
@@ -200,11 +216,37 @@ public class EmbeddedCassandraServerHelper {
         return DatabaseDescriptor.getNativeTransportPort();
     }
 
-   private static void dropKeyspaces() {
-        if (hasHector()) {
-            dropKeyspacesWithHector();
-        } else {
-            dropKeyspacesWithNativeDriver();
+    private static void cleanDataWithNativeDriver(String keyspace, String... excludedTables) {
+        String host = DatabaseDescriptor.getRpcAddress().getHostName();
+        int port = DatabaseDescriptor.getNativeTransportPort();
+        try (com.datastax.driver.core.Cluster cluster =
+                     com.datastax.driver.core.Cluster.builder().addContactPoint(host).withPort(port).build();
+             com.datastax.driver.core.Session session = cluster.connect()) {
+            final KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
+            final Collection<TableMetadata> tables = keyspaceMetadata.getTables();
+            List<String> excludeTableList = Arrays.asList(excludedTables);
+            for (TableMetadata table : tables) {
+                final String tableName = table.getName();
+                if (!excludeTableList.contains(tableName)) {
+                    session.execute("truncate table " + tableName);
+                }
+            }
+        }
+    }
+
+    private static void cleanDataWithHector(String keyspace, String... excludedTables) {
+        String host = DatabaseDescriptor.getRpcAddress().getHostName();
+        int port = DatabaseDescriptor.getRpcPort();
+        Cluster cluster = HFactory.getOrCreateCluster("TestCluster", new CassandraHostConfigurator(host + ":" + port));
+        KeyspaceDefinition keyspaceDefinition = cluster.describeKeyspace(keyspace);
+        final List<ColumnFamilyDefinition> cfDefs = keyspaceDefinition.getCfDefs();
+        final List<String> excludedTableList = Arrays.asList(excludedTables);
+        /* truncate all tables in specified keyspace, except those in excludedTables */
+        for (ColumnFamilyDefinition columnFamilyDefinition : cfDefs) {
+            String cfName = columnFamilyDefinition.getName();
+            if (!excludedTableList.contains(cfName)) {
+                cluster.truncate(keyspace, cfName);
+            }
         }
     }
 
@@ -218,7 +260,15 @@ public class EmbeddedCassandraServerHelper {
         }
         return hector;
     }
-    
+
+    private static void dropKeyspaces() {
+        if (hasHector()) {
+            dropKeyspacesWithHector();
+        } else {
+            dropKeyspacesWithNativeDriver();
+        }
+    }
+
     private static void dropKeyspacesWithHector() {
         String host = DatabaseDescriptor.getRpcAddress().getHostName();
         int port = DatabaseDescriptor.getRpcPort();
