@@ -60,7 +60,7 @@ public class CQLDataLoader {
         }
 
         if (dataSet.isKeyspaceCreation()) {
-            String createQuery = "CREATE KEYSPACE " + keyspaceName + " WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}";
+            String createQuery = "CREATE KEYSPACE " + keyspaceName + " WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1} AND durable_writes = false";
             log.debug("executing : " + createQuery);
             session.execute(createQuery);
             String useQuery = "USE " + keyspaceName;
