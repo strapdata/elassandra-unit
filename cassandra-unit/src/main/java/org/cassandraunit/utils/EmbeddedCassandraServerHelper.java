@@ -1,6 +1,7 @@
 package org.cassandraunit.utils;
 
 import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.TableMetadata;
 import me.prettyprint.cassandra.service.CassandraHostConfigurator;
@@ -140,9 +141,12 @@ public class EmbeddedCassandraServerHelper {
                 throw new AssertionError("Cassandra daemon did not start within timeout");
             }
 
+            QueryOptions queryOptions = new QueryOptions();
+            queryOptions.setRefreshSchemaIntervalMillis(0);
             cluster = com.datastax.driver.core.Cluster.builder()
                 .addContactPoints(EmbeddedCassandraServerHelper.getHost())
                 .withPort(EmbeddedCassandraServerHelper.getNativeTransportPort())
+                .withQueryOptions(queryOptions)
                 .build();
 
             session = cluster.connect();
