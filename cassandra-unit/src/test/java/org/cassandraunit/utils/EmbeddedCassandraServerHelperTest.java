@@ -1,19 +1,14 @@
 package org.cassandraunit.utils;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-
-import java.util.Random;
-
-import junit.framework.Assert;
-import me.prettyprint.cassandra.service.CassandraHostConfigurator;
-import me.prettyprint.hector.api.Cluster;
-import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
-import me.prettyprint.hector.api.factory.HFactory;
-
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.Session;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 /**
  * UnitTest for EmbeddedCassandra with random port. Because Cassandra basically can only be started once per JVM, this test is
@@ -30,25 +25,26 @@ public class EmbeddedCassandraServerHelperTest {
     public void shouldStartupOnRandomFreePort() throws Exception {
         EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE);
         int nativePort = EmbeddedCassandraServerHelper.getNativeTransportPort();
-        int rpcPort = EmbeddedCassandraServerHelper.getRpcPort();
-        Assert.assertTrue(nativePort > 0);
-        Assert.assertTrue(rpcPort > 0);
-        Assert.assertTrue(rpcPort != 9171); // may seldomly fail if system chooses exactly port 9171 ...
-        testIfTheEmbeddedCassandraServerIsUpOnHost("127.0.0.1:" + rpcPort);
+        assertThat(nativePort > 0, is(true));
+        testIfTheEmbeddedCassandraServerIsUpOnHost("127.0.0.1", nativePort);
     }
 
-    private void testIfTheEmbeddedCassandraServerIsUpOnHost(String hostAndPort) {
-        Random random = new Random();
-        Cluster cluster = HFactory.getOrCreateCluster("TestCluster" + random.nextInt(), new CassandraHostConfigurator(
-                hostAndPort));
+    private void testIfTheEmbeddedCassandraServerIsUpOnHost(String host, int port) {
+        Cluster cluster = com.datastax.driver.core.Cluster.builder()
+                .addContactPoints(host)
+                .withPort(port)
+                .build();
+
+
         try {
-            assertThat(cluster.getConnectionManager().getActivePools().size(), is(1));
-            KeyspaceDefinition keyspaceDefinition = cluster.describeKeyspace("system");
-            assertThat(keyspaceDefinition, notNullValue());
-            assertThat(keyspaceDefinition.getReplicationFactor(), is(1));
+            Session session = cluster.connect();
+
+            assertThat(session.getState().getConnectedHosts().size(),is(1));
+            KeyspaceMetadata system = session.getCluster().getMetadata().getKeyspace("system");
+            assertThat(system.getTables().size(),not(0));
+
         } finally {
-            // due to random the created cluster cannot be used ever anyway
-            HFactory.shutdownCluster(cluster);
+            cluster.close();
         }
     }
 }

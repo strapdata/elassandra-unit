@@ -1,22 +1,11 @@
 package org.cassandraunit.cli;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
-import org.apache.commons.lang3.StringUtils;
-import org.cassandraunit.CQLDataLoader;
-import org.cassandraunit.DataLoader;
-import org.cassandraunit.LoadingOption;
-import org.cassandraunit.dataset.FileDataSet;
-import org.cassandraunit.dataset.cql.FileCQLDataSet;
-import org.cassandraunit.model.StrategyModel;
-
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
+import org.apache.commons.cli.*;
+import org.apache.commons.lang3.StringUtils;
+import org.cassandraunit.CQLDataLoader;
+import org.cassandraunit.dataset.cql.FileCQLDataSet;
 
 public class CassandraUnitCommandLineLoader {
 
@@ -57,9 +46,6 @@ public class CassandraUnitCommandLineLoader {
                 if (containBadReplicationFactorArgumentValue()) {
                     printUsage("Bad argument value for option r");
                     exit = true;
-                } else if (containBadStrategyArgumentValue()) {
-                    printUsage("Bad argument value for option s");
-                    exit = true;
                 }
             }
         } catch (ParseException e) {
@@ -89,20 +75,14 @@ public class CassandraUnitCommandLineLoader {
     }
 
     private static void otherTypeOfDataSetLoad(String host, String port, String file) {
-        LoadingOption loadingOption = new LoadingOption();
-        loadingOption.setOnlySchema(commandLine.hasOption("o"));
 
-        if (commandLine.hasOption("r")) {
-            loadingOption.setReplicationFactor(Integer.parseInt(commandLine.getOptionValue("r")));
-        }
+        Cluster cluster = com.datastax.driver.core.Cluster.builder()
+                .addContactPoints(host)
+                .withPort(Integer.parseInt(port))
+                .build();
 
-        if (commandLine.hasOption("s")) {
-
-            loadingOption.setStrategy(StrategyModel.fromValue(commandLine.getOptionValue("s")));
-        }
-
-        DataLoader dataLoader = new DataLoader("clusterToLoad", host + ":" + port);
-        dataLoader.load(new FileDataSet(file), loadingOption);
+        CQLDataLoader dataLoader = new CQLDataLoader(cluster.connect());
+        dataLoader.load(new FileCQLDataSet(file));
     }
 
     private static void cqlDataSetLoad(String host, String port, String file) {
@@ -125,18 +105,6 @@ public class CassandraUnitCommandLineLoader {
         return false;
     }
 
-    private static boolean containBadStrategyArgumentValue() {
-        String strategy = commandLine.getOptionValue("s");
-        if (strategy != null && !strategy.trim().isEmpty()) {
-            try {
-                StrategyModel.fromValue(strategy);
-                return false;
-            } catch (IllegalArgumentException e) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private static void printUsage(String message) {
         System.out.println(message);
@@ -152,13 +120,6 @@ public class CassandraUnitCommandLineLoader {
                 .isRequired().create("h"));
         options.addOption(OptionBuilder.withLongOpt("port").hasArg().withDescription("target port (required)")
                 .isRequired().create("p"));
-        options.addOption(OptionBuilder.withLongOpt("onlySchema").withDescription("only load schema (optional)")
-                .create("o"));
-        options.addOption(OptionBuilder.withLongOpt("replicationFactor").hasArg()
-                .withDescription("override the replication factor set in the dataset (optional)").create("r"));
-        options.addOption(OptionBuilder.withLongOpt("strategy").hasArg()
-                .withDescription("override the strategy set in the dataset (optional)").create("s"));
-
     }
 
     private static void clearStaticAttributes() {

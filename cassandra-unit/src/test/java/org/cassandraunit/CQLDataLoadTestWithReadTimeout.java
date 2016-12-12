@@ -1,12 +1,11 @@
 package org.cassandraunit;
 
-import static org.junit.Assert.assertEquals;
-
+import com.datastax.driver.core.ResultSet;
 import org.cassandraunit.dataset.cql.ClassPathCQLDataSet;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.datastax.driver.core.ResultSet;
+import static org.junit.Assert.assertEquals;
 
 /**
  * 

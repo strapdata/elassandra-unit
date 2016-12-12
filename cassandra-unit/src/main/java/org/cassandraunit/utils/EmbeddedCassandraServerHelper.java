@@ -4,11 +4,6 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.TableMetadata;
-import me.prettyprint.cassandra.service.CassandraHostConfigurator;
-import me.prettyprint.hector.api.Cluster;
-import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
-import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
-import me.prettyprint.hector.api.factory.HFactory;
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.db.commitlog.CommitLog;
 import org.apache.cassandra.exceptions.ConfigurationException;
@@ -195,11 +190,7 @@ public class EmbeddedCassandraServerHelper {
      * truncate data in keyspace, except specified tables
      */
     public static void cleanDataEmbeddedCassandra(String keyspace, String... excludedTables) {
-        if (hasHector()) {
-            cleanDataWithHector(keyspace, excludedTables);
-        } else {
             cleanDataWithNativeDriver(keyspace, excludedTables);
-        }
     }
 
     public static com.datastax.driver.core.Cluster getCluster() {
@@ -258,57 +249,9 @@ public class EmbeddedCassandraServerHelper {
         }
     }
 
-    private static void cleanDataWithHector(String keyspace, String... excludedTables) {
-        String host = DatabaseDescriptor.getRpcAddress().getHostName();
-        int port = DatabaseDescriptor.getRpcPort();
-        Cluster cluster = HFactory.getOrCreateCluster("TestCluster", new CassandraHostConfigurator(host + ":" + port));
-        KeyspaceDefinition keyspaceDefinition = cluster.describeKeyspace(keyspace);
-        final List<ColumnFamilyDefinition> cfDefs = keyspaceDefinition.getCfDefs();
-        final List<String> excludedTableList = Arrays.asList(excludedTables);
-        /* truncate all tables in specified keyspace, except those in excludedTables */
-        for (ColumnFamilyDefinition columnFamilyDefinition : cfDefs) {
-            String cfName = columnFamilyDefinition.getName();
-            if (!excludedTableList.contains(cfName)) {
-                cluster.truncate(keyspace, cfName);
-            }
-        }
-    }
-
-    private static boolean hasHector() {
-        boolean hector = false;
-        try {
-            new CassandraHostConfigurator("");
-            hector = true;
-        } catch(NoClassDefFoundError err) {
-            hector = false;
-        }
-        return hector;
-    }
 
     private static void dropKeyspaces() {
-        if (hasHector()) {
-            dropKeyspacesWithHector();
-        } else {
             dropKeyspacesWithNativeDriver();
-        }
-    }
-
-    private static void dropKeyspacesWithHector() {
-        String host = DatabaseDescriptor.getRpcAddress().getHostName();
-        int port = DatabaseDescriptor.getRpcPort();
-        log.debug("Cleaning cassandra keyspaces on " + host + ":" + port);
-        Cluster cluster = HFactory.getOrCreateCluster("TestCluster", new CassandraHostConfigurator(host + ":" + port));
-        /* get all keyspace */
-        List<KeyspaceDefinition> keyspaces = cluster.describeKeyspaces();
-
-        /* drop all keyspace except internal cassandra keyspace */
-        for (KeyspaceDefinition keyspaceDefinition : keyspaces) {
-            String keyspaceName = keyspaceDefinition.getName();
-
-            if (!isSystemKeyspaceName(keyspaceName)) {
-                cluster.dropKeyspace(keyspaceName);
-            }
-        }
     }
 
     private static void dropKeyspacesWithNativeDriver() {
