@@ -138,6 +138,8 @@ public class EmbeddedCassandraServerHelper {
 
             QueryOptions queryOptions = new QueryOptions();
             queryOptions.setRefreshSchemaIntervalMillis(0);
+            queryOptions.setRefreshNodeIntervalMillis(0);
+            queryOptions.setRefreshNodeListIntervalMillis(0);
             cluster = com.datastax.driver.core.Cluster.builder()
                 .addContactPoints(EmbeddedCassandraServerHelper.getHost())
                 .withPort(EmbeddedCassandraServerHelper.getNativeTransportPort())
