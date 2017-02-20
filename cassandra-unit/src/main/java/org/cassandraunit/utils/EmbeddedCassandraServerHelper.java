@@ -119,6 +119,8 @@ public class EmbeddedCassandraServerHelper {
             System.setProperty("log4j.configuration", "file:" + tmpDir + DEFAULT_LOG4J_CONFIG_FILE);
         }
 
+        DatabaseDescriptor.daemonInitialization();
+
         cleanupAndLeaveDirs();
         final CountDownLatch startupLatch = new CountDownLatch(1);
         ExecutorService executor = Executors.newSingleThreadExecutor();
