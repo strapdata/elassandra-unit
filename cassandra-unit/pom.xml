@@ -73,14 +73,6 @@
                     <artifactId>log4j</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpcore</artifactId>
                 </exclusion>
@@ -115,7 +107,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-handler</artifactId>
-            <version>4.0.27.Final</version>
+            <version>4.0.39.Final</version>
         </dependency>
 
         <!-- hamcrest could be moved to the test-scope. But as the examples do not declare hamcrest-deps in their pom, 
