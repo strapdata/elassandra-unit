@@ -2,6 +2,7 @@ package org.cassandraunit;
 
 import com.datastax.driver.core.CloseFuture;
 import org.cassandraunit.dataset.CQLDataSet;
+import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -43,15 +44,7 @@ public abstract class AbstractCassandraUnit4CQLTestCase {
 
     @After
     public void after(){
-        if(session!=null){
-            log.debug("session shutdown");
-            CloseFuture closeFuture = session.closeAsync();
-            closeFuture.force();
-        }
-        if (cluster != null) {
-        	log.debug("cluster shutdown");
-        	cluster.close();
-        }
+        EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
     }
 
     public abstract CQLDataSet getDataSet();
