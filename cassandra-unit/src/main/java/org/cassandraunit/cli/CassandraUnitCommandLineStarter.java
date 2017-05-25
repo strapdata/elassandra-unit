@@ -82,7 +82,7 @@ public class CassandraUnitCommandLineStarter {
                     dataSetLoad(LOCALHOST, port, schema);
                 }
             }
-        } catch (TTransportException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
