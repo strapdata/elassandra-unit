@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.reader.UnicodeReader;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -28,7 +29,6 @@ import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -97,9 +97,8 @@ public class EmbeddedCassandraServerHelper {
 
         rmdir(tmpDir);
         copy(yamlFile, tmpDir);
-        String yamlPath = tmpDir + yamlFile;
-        File file = new File(yamlPath);
-        readAndAdaptYaml(yamlPath);
+        File file = new File(tmpDir + yamlFile);
+        readAndAdaptYaml(file);
         startEmbeddedCassandra(file, tmpDir, timeout);
     }
 
@@ -327,8 +326,8 @@ public class EmbeddedCassandraServerHelper {
         DatabaseDescriptor.createAllDirectories();
     }
 
-    private static void readAndAdaptYaml(String yamlPath) throws IOException {
-        String yaml = readYamlFileToString(yamlPath);
+    private static void readAndAdaptYaml(File cassandraConfig) throws IOException {
+        String yaml = readYamlFileToString(cassandraConfig);
 
         // read the ports and replace them if zero. dump back the changed string, preserving comments (thus no snakeyaml)
         Pattern portPattern = Pattern.compile("^([a-z_]+)_port:\\s*([0-9]+)\\s*$", Pattern.MULTILINE);
@@ -351,18 +350,28 @@ public class EmbeddedCassandraServerHelper {
         portMatcher.appendTail(sb);
 
         if (replaced) {
-            writeStringToYamlFile(yamlPath, sb.toString());
+            writeStringToYamlFile(cassandraConfig, sb.toString());
         }
     }
     
-    private static String readYamlFileToString(String yamlPath) throws IOException {
+    private static String readYamlFileToString(File yamlFile) throws IOException {
         // using UnicodeReader to read the correct encoding according to BOM
-        return Files.lines(Paths.get(yamlPath)).collect(Collectors.joining());
+        try (UnicodeReader reader = new UnicodeReader(new FileInputStream(yamlFile))) {
+            StringBuilder sb = new StringBuilder();
+            char[] cbuf = new char[1024];
+
+            int readden = reader.read(cbuf);
+            while(readden >= 0) {
+                sb.append(cbuf, 0, readden);
+                readden = reader.read(cbuf);
+            }
+            return sb.toString();
+        }
     }
 
-    private static void writeStringToYamlFile(String yamlPath, String yaml) throws IOException {
+    private static void writeStringToYamlFile(File yamlFile, String yaml) throws IOException {
         // write utf-8 without BOM
-        try (Writer writer = Files.newBufferedWriter(Paths.get(yamlPath))) {
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(yamlFile), "utf-8")) {
             writer.write(yaml);
         }
     }
