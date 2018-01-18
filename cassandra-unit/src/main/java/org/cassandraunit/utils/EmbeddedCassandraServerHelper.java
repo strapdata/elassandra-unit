@@ -166,6 +166,7 @@ public class EmbeddedCassandraServerHelper {
                 .withoutJMXReporting()
                 .withQueryOptions(queryOptions)
                 .withoutMetrics()
+                .withoutJMXReporting()
                 .build();
 
             session = cluster.connect();
