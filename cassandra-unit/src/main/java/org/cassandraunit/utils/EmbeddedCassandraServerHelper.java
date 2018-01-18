@@ -165,6 +165,7 @@ public class EmbeddedCassandraServerHelper {
                 .withPort(EmbeddedCassandraServerHelper.getNativeTransportPort())
                 .withoutJMXReporting()
                 .withQueryOptions(queryOptions)
+                .withoutMetrics()
                 .build();
 
             session = cluster.connect();
