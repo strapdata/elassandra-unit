@@ -31,7 +31,7 @@ public abstract class AbstractCassandraUnit4CQLTestCase {
         cassandraUnit = new CassandraCQLUnit(getDataSet(), configurationFileName);
     }
 
-	@Before
+    @Before
     public void before() throws Exception {
         if (!initialized) {
             cassandraUnit.before();
