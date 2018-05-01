@@ -2,7 +2,6 @@ package org.cassandraunit;
 
 import com.datastax.driver.core.Session;
 import org.cassandraunit.dataset.CQLDataSet;
-import org.cassandraunit.utils.CqlOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
