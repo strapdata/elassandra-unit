@@ -1,6 +1,5 @@
 package org.cassandraunit.dataset.cql;
 
-import org.apache.commons.lang3.StringUtils;
 import org.cassandraunit.dataset.CQLDataSet;
 import org.cassandraunit.dataset.ParseException;
 
@@ -8,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
