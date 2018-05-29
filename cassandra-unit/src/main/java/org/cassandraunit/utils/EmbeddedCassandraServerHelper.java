@@ -155,25 +155,9 @@ public class EmbeddedCassandraServerHelper {
                 log.error("Cassandra daemon did not start after " + timeout + " ms. Consider increasing the timeout");
                 throw new AssertionError("Cassandra daemon did not start within timeout");
             }
-
-            QueryOptions queryOptions = new QueryOptions();
-            queryOptions.setRefreshSchemaIntervalMillis(0);
-            queryOptions.setRefreshNodeIntervalMillis(0);
-            queryOptions.setRefreshNodeListIntervalMillis(0);
-            cluster = com.datastax.driver.core.Cluster.builder()
-                .addContactPoints(EmbeddedCassandraServerHelper.getHost())
-                .withPort(EmbeddedCassandraServerHelper.getNativeTransportPort())
-                .withoutJMXReporting()
-                .withQueryOptions(queryOptions)
-                .withoutMetrics()
-                .withoutJMXReporting()
-                .build();
-
-            session = cluster.connect();
-
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                session.close();
-                cluster.close();
+                if (session != null) session.close();
+                if (cluster != null) cluster.close();
             }));
         } catch (InterruptedException e) {
             log.error("Interrupted waiting for Cassandra daemon to start:", e);
@@ -217,11 +201,34 @@ public class EmbeddedCassandraServerHelper {
     }
 
     public static com.datastax.driver.core.Cluster getCluster() {
+        initCluster();
         return cluster;
     }
 
     public static Session getSession() {
+        initSession();
         return session;
+    }
+
+    private static synchronized void initCluster() {
+        if (cluster == null) {
+            QueryOptions queryOptions = new QueryOptions();
+            queryOptions.setRefreshSchemaIntervalMillis(0);
+            queryOptions.setRefreshNodeIntervalMillis(0);
+            queryOptions.setRefreshNodeListIntervalMillis(0);
+            cluster = com.datastax.driver.core.Cluster.builder()
+                    .addContactPoints(EmbeddedCassandraServerHelper.getHost())
+                    .withPort(EmbeddedCassandraServerHelper.getNativeTransportPort())
+                    .withQueryOptions(queryOptions)
+                    .build();
+        }
+    }
+
+    private static synchronized void initSession() {
+        if (session == null) {
+            initCluster();
+            session = cluster.connect();
+        }
     }
 
     /**
