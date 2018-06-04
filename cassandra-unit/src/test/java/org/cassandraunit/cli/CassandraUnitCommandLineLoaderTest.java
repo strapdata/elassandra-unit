@@ -78,9 +78,8 @@ public class CassandraUnitCommandLineLoaderTest {
         String[] args = {"-f", targetFileDataSet, "-h", host, "-p", port};
         CassandraUnitCommandLineLoader.main(args);
 
-        com.datastax.driver.core.Cluster cluster =
-                new com.datastax.driver.core.Cluster.Builder().addContactPoints(host).withPort(Integer.parseInt(port)).build();
-        Session session = cluster.connect();
+
+        Session session = EmbeddedCassandraServerHelper.getSession();
 
         ResultSet result = session.execute("select * from mykeyspace.testCQLTable WHERE id=1690e8da-5bf8-49e8-9583-4dff8a570737");
         String val = result.iterator().next().getString("value");
