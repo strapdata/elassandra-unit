@@ -41,4 +41,9 @@ public class EmbeddedCassandraServerHelperTest {
             assertThat(system.getTables().size(), not(0));
         }
     }
+
+    @Test
+    public void should_clean() throws Exception {
+        EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
+    }
 }

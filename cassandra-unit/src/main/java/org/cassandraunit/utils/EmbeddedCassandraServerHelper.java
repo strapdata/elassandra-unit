@@ -190,14 +190,18 @@ public class EmbeddedCassandraServerHelper {
      * drop all keyspaces (expect system)
      */
     public static void cleanEmbeddedCassandra() {
-        dropKeyspaces();
+        if (session != null) {
+            dropKeyspaces();
+        }
     }
 
     /**
      * truncate data in keyspace, except specified tables
      */
     public static void cleanDataEmbeddedCassandra(String keyspace, String... excludedTables) {
-            cleanDataWithNativeDriver(keyspace, excludedTables);
+            if (session != null) {
+                cleanDataWithNativeDriver(keyspace, excludedTables);
+            }
     }
 
     public static com.datastax.driver.core.Cluster getCluster() {
