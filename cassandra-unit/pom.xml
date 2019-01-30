@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.cassandraunit</groupId>
-        <artifactId>cassandra-unit-parent</artifactId>
+        <groupId>com.strapdata.elassandraunit</groupId>
+        <artifactId>elassandra-unit-parent</artifactId>
         <version>3.5.0.2-SNAPSHOT</version>
     </parent>
-    <groupId>org.cassandraunit</groupId>
-    <artifactId>cassandra-unit</artifactId>
+    <groupId>com.strapdata.elassandraunit</groupId>
+    <artifactId>elassandra-unit</artifactId>
     <packaging>jar</packaging>
     <name>cassandra-unit</name>
     <description>Test framework to develop with Cassandra</description>
@@ -56,9 +56,9 @@
             <version>${cu.junit.version}</version>
         </dependency> 
         <dependency>
-            <groupId>org.apache.cassandra</groupId>
-            <artifactId>cassandra-all</artifactId>
-            <version>${cu.cassandra.all.version}</version>
+            <groupId>com.strapdata.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>${cu.elassandra.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -89,10 +89,6 @@
                     <artifactId>hibernate-validator</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>io.netty</groupId>
-                    <artifactId>netty-all</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.thrift</groupId>
                     <artifactId>libthrift</artifactId>
                 </exclusion>
@@ -101,6 +97,11 @@
                     <artifactId>jna</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.strapdata.elasticsearch.plugin</groupId>
+            <artifactId>transport-netty4</artifactId>
+            <version>6.2.3</version>
         </dependency>
         <dependency> <!-- for cassandra-all because maven fails to reliably resolve the conflict with cassandra-driver-core -->
             <groupId>com.google.guava</groupId>
@@ -111,11 +112,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.4</version>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler</artifactId>
-            <version>4.0.44.Final</version>
         </dependency>
         <dependency>
             <groupId>org.apache.thrift</groupId>

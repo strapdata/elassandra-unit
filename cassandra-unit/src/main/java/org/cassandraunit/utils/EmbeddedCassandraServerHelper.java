@@ -8,8 +8,16 @@ import org.apache.cassandra.db.commitlog.CommitLog;
 import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.service.CassandraDaemon;
+import org.apache.cassandra.service.ElassandraDaemon;
+import org.apache.cassandra.utils.FBUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.transport.TTransportException;
+import org.elassandra.env.EnvironmentLoader;
+import org.elasticsearch.cli.Terminal;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.env.Environment;
+import org.elasticsearch.node.InternalSettingsPreparer;
+import org.elasticsearch.plugins.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.reader.UnicodeReader;
@@ -25,11 +33,7 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,7 +50,7 @@ public class EmbeddedCassandraServerHelper {
 
     private static Logger log = LoggerFactory.getLogger(EmbeddedCassandraServerHelper.class);
 
-    public static final long DEFAULT_STARTUP_TIMEOUT = 20000;
+    public static final long DEFAULT_STARTUP_TIMEOUT = 60000;
     public static final String DEFAULT_TMP_DIR = "target/embeddedCassandra";
     /** Default configuration file. Starts embedded cassandra under the well known ports */
     public static final String DEFAULT_CASSANDRA_YML_FILE = "cu-cassandra.yaml";
@@ -67,7 +71,7 @@ public class EmbeddedCassandraServerHelper {
         return keyspace -> !systemKeyspaces.contains(keyspace);
     }
 
-    private static CassandraDaemon cassandraDaemon = null;
+    private static ElassandraDaemon elassandraDaemon = null;
     private static String launchedYamlFile;
     private static com.datastax.driver.core.Cluster cluster;
     private static Session session;
@@ -93,7 +97,7 @@ public class EmbeddedCassandraServerHelper {
     }
 
     public static void startEmbeddedCassandra(String yamlFile, String tmpDir, long timeout) throws TTransportException, IOException, ConfigurationException {
-        if (cassandraDaemon != null) {
+        if (elassandraDaemon != null) {
             /* nothing to do Cassandra is already started */
             return;
         }
@@ -119,15 +123,18 @@ public class EmbeddedCassandraServerHelper {
          * @throws ConfigurationException
          */
     public static void startEmbeddedCassandra(File file, String tmpDir, long timeout) throws IOException, ConfigurationException {
-        if (cassandraDaemon != null) {
+        if (elassandraDaemon != null) {
             /* nothing to do Cassandra is already started */
             return;
         }
 
         checkConfigNameForRestart(file.getAbsolutePath());
 
-        log.debug("Starting cassandra...");
+        log.debug("Starting elassandra...");
         log.debug("Initialization needed");
+
+        System.setProperty("cassandra.home", file.getParent());
+        System.setProperty("cassandra.storagedir", file.getParent());
 
         System.setProperty("cassandra.config", "file:" + file.getAbsolutePath());
         System.setProperty("cassandra-foreground", "true");
@@ -146,9 +153,19 @@ public class EmbeddedCassandraServerHelper {
         final CountDownLatch startupLatch = new CountDownLatch(1);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
-            cassandraDaemon = new CassandraDaemon();
-            cassandraDaemon.activate();
-            startupLatch.countDown();
+            EnvironmentLoader envloader = new EnvironmentLoader() {};
+            elassandraDaemon = new ElassandraDaemon(envloader.loadEnvironment(true, file.getParent(), file.getParent() ));
+            ElassandraDaemon.instance = elassandraDaemon;
+            elassandraDaemon.register(new ElassandraDaemon.SetupListener() {
+                @Override
+                public void onComplete() {
+                    startupLatch.countDown();
+                }
+            });
+            elassandraDaemon.activate(false, true,
+                elassandraDaemon.getEnvironment().settings(),
+                elassandraDaemon.getEnvironment(),
+                Collections.<Class<? extends Plugin>>singletonList(org.elasticsearch.transport.Netty4Plugin.class));
         });
         try {
             if (!startupLatch.await(timeout, MILLISECONDS)) {
@@ -183,7 +200,7 @@ public class EmbeddedCassandraServerHelper {
     public static void stopEmbeddedCassandra() {
         log.warn("EmbeddedCassandraServerHelper.stopEmbeddedCassandra() is now deprecated, " +
                 "previous version was not fully operating");
-        cassandraDaemon.deactivate();
+        elassandraDaemon.deactivate();
     }
 
     /**

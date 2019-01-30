@@ -1,14 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.cassandraunit</groupId>
-        <artifactId>cassandra-unit-parent</artifactId>
+        <groupId>com.strapdata.elassandraunit</groupId>
+        <artifactId>elassandra-unit-parent</artifactId>
         <version>3.5.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>cassandra-unit-shaded</artifactId>
+    <artifactId>elassandra-unit-shaded</artifactId>
     <description>Shaded version of cassandra-unit</description>
     <properties>
-        <shade.prefix>org.cassandraunit.shaded</shade.prefix>
+        <shade.prefix>com.strapdata.elassandraunit.shaded</shade.prefix>
     </properties>
 
     <build>
@@ -31,10 +31,10 @@
                             <artifactSet>
                                 <includes>
                                     <!-- included only to suppress dependency, not relocated -->
-                                    <include>org.cassandraunit:cassandra-unit</include>
+                                    <include>com.strapdata.elassandraunit:elassandra-unit</include>
 
                                     <!-- included due to relocated sub-dependencies, but itself not relocated because Class.forName -->
-                                    <include>org.apache.cassandra:cassandra-all</include>
+                                    <include>com.strapdata.elassandraunit:cassandra-all</include>
 
                                     <!-- included and relocated due to clash between hector and cassandra itself -->
                                     <include>org.apache.cassandra:cassandra-thrift</include>
@@ -121,8 +121,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.cassandraunit</groupId>
-            <artifactId>cassandra-unit</artifactId>
+            <groupId>com.strapdata.elassandraunit</groupId>
+            <artifactId>elassandra-unit</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
