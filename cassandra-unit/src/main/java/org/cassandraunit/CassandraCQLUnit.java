@@ -17,6 +17,10 @@ public class CassandraCQLUnit extends BaseCassandraUnit {
 	public Session session;
 	public Cluster cluster;
 
+	public CassandraCQLUnit() {
+		this(null);
+	}
+
 	public CassandraCQLUnit(CQLDataSet dataSet) {
 		this.dataSet = dataSet;
 	}
@@ -60,7 +64,8 @@ public class CassandraCQLUnit extends BaseCassandraUnit {
 		cluster = EmbeddedCassandraServerHelper.getCluster();
 		session = EmbeddedCassandraServerHelper.getSession();
 		CQLDataLoader dataLoader = new CQLDataLoader(session);
-		dataLoader.load(dataSet);
+		if (dataSet != null)
+			dataLoader.load(dataSet);
 		session = dataLoader.getSession();
 	}
 
