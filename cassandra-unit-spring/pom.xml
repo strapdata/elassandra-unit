@@ -6,9 +6,9 @@
         <version>3.5.0.2-SNAPSHOT</version>
 	</parent>
     <groupId>com.strapdata.elassandraunit</groupId>
-	<artifactId>cassandra-unit-spring</artifactId>
+	<artifactId>elassandra-unit-spring</artifactId>
 	<packaging>jar</packaging>
-	<name>cassandra-unit-spring</name>
+	<name>elassandra-unit-spring</name>
 	<description>Spring Test framework to develop with Cassandra</description>
 
 	<dependencies>
