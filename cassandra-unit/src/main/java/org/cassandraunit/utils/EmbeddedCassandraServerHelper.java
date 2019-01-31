@@ -3,6 +3,7 @@ package org.cassandraunit.utils;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
+import com.google.common.collect.Lists;
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.db.commitlog.CommitLog;
 import org.apache.cassandra.exceptions.ConfigurationException;
@@ -135,6 +136,9 @@ public class EmbeddedCassandraServerHelper {
 
         System.setProperty("cassandra.home", file.getParent());
         System.setProperty("cassandra.storagedir", file.getParent());
+        System.setProperty("es.synchronous_refresh", "true");
+        System.setProperty("es.drop_on_delete_index", "true");
+        System.setProperty("tests.maven", "true");
 
         System.setProperty("cassandra.config", "file:" + file.getAbsolutePath());
         System.setProperty("cassandra-foreground", "true");
@@ -154,18 +158,29 @@ public class EmbeddedCassandraServerHelper {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             EnvironmentLoader envloader = new EnvironmentLoader() {};
-            elassandraDaemon = new ElassandraDaemon(envloader.loadEnvironment(true, file.getParent(), file.getParent() ));
-            ElassandraDaemon.instance = elassandraDaemon;
+            elassandraDaemon = new ElassandraDaemon(envloader.loadEnvironment(true, file.getParent(), file.getParent()));
             elassandraDaemon.register(new ElassandraDaemon.SetupListener() {
                 @Override
                 public void onComplete() {
                     startupLatch.countDown();
                 }
             });
+
+            // load plugins
+            List<Class<? extends Plugin>> classpathPlugins = new ArrayList<>();
+            classpathPlugins.add(org.elasticsearch.transport.Netty4Plugin.class);
+            try {
+                Class<? extends Plugin> enterprisePlugin = (Class<? extends Plugin>) Class.forName("com.strapdata.elasticsearch.plugin.EnterprisePlugin");
+                classpathPlugins.add(enterprisePlugin);
+                log.info("Elassandra Enterprise plugin loaded");
+            } catch(ClassNotFoundException e) {
+                // Enterprise plugin not in classpath
+            }
+
             elassandraDaemon.activate(false, true,
                 elassandraDaemon.getEnvironment().settings(),
                 elassandraDaemon.getEnvironment(),
-                Collections.<Class<? extends Plugin>>singletonList(org.elasticsearch.transport.Netty4Plugin.class));
+                classpathPlugins);
         });
         try {
             if (!startupLatch.await(timeout, MILLISECONDS)) {
