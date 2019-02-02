@@ -6,9 +6,8 @@
         <version>3.5.0.2-SNAPSHOT</version>
     </parent>
     <groupId>com.strapdata.elassandraunit</groupId>
-    <artifactId>elassandra-unit</artifactId>
+<artifactId>elassandra-unit</artifactId>
     <packaging>jar</packaging>
-    <name>elassandra-unit</name>
     <description>Test framework to develop with Cassandra</description>
     <build>
         <resources>
@@ -44,6 +43,17 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M3</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <cassandra.custom_query_handler_class>org.elassandra.index.ElasticQueryHandler</cassandra.custom_query_handler_class>
+                        <cassandra.ring_delay_ms>0</cassandra.ring_delay_ms>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -101,7 +111,7 @@
         <dependency>
             <groupId>com.strapdata.elasticsearch.plugin</groupId>
             <artifactId>transport-netty4</artifactId>
-            <version>6.2.3</version>
+            <version>${cu.elassandra.version}</version>
         </dependency>
         <dependency> <!-- for cassandra-all because maven fails to reliably resolve the conflict with cassandra-driver-core -->
             <groupId>com.google.guava</groupId>

@@ -4,6 +4,7 @@ import com.datastax.driver.core.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
 import java.util.function.Consumer;
 
 public class CqlOperations {
@@ -30,6 +31,8 @@ public class CqlOperations {
     }
 
     public static Consumer<String> createKeyspace(Session session) {
-        return keyspace -> execute(session).accept("CREATE KEYSPACE IF NOT EXISTS " + keyspace + " WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1} AND durable_writes = false");
+        return keyspace -> execute(session).accept(String.format(Locale.ROOT,
+            "CREATE KEYSPACE IF NOT EXISTS %s WITH replication={'class' : 'NetworkTopologyStrategy', '%s':'1'} AND durable_writes = false",
+            keyspace, session.getCluster().getMetadata().getAllHosts().iterator().next().getDatacenter()));
     }
 }
