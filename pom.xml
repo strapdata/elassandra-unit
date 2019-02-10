@@ -6,7 +6,7 @@
     <name>elassandra-unit-parent</name>
     <version>3.5.0.2-SNAPSHOT</version>
     <description>Test framework to develop with Cassandra</description>
-    <url>https://github.com/jsevellec/cassandra-unit</url>
+    <url>https://github.com/strapdata/elassandra-unit</url>
     <licenses>
         <license>
             <name>GNU LESSER GENERAL PUBLIC LICENSE V3.0</name>

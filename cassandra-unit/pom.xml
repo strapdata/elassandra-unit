@@ -6,9 +6,9 @@
         <version>3.5.0.2-SNAPSHOT</version>
     </parent>
     <groupId>com.strapdata.elassandraunit</groupId>
-<artifactId>elassandra-unit</artifactId>
+    <artifactId>elassandra-unit</artifactId>
     <packaging>jar</packaging>
-    <description>Test framework to develop with Cassandra</description>
+    <description>Test framework to develop with Elassandra</description>
     <build>
         <resources>
             <resource>
