@@ -14,7 +14,7 @@
 
 ## Quick start
 
-Add the following dependency:
+Add the following dependencies:
 
 ```xml
     <dependency>
@@ -25,7 +25,7 @@ Add the following dependency:
         <exclusions>
             <exclusion>
                 <groupId>com.strapdata.elassandraunit</groupId>
-                <artifactId>elssandra-unit</artifactId>
+                <artifactId>elassandra-unit</artifactId>
             </exclusion>
         </exclusions>
     </dependency>
@@ -56,6 +56,25 @@ Add the Elasticsearch REST high level client with the same version as the one em
       <artifactId>elasticsearch-rest-high-level-client</artifactId>
       <version>6.2.3</version>
     </dependency>
+```
+
+To handle Elasticsearch search requests over CQL, set the system property **cassandra.custom_query_handler_class** to **org.elassandra.index.ElasticQueryHandler**:
+
+```xml
+    ...
+    <build>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.0.0-M3</version>
+            <configuration>
+                <systemPropertyVariables>
+                    <cassandra.custom_query_handler_class>org.elassandra.index.ElasticQueryHandler</cassandra.custom_query_handler_class>
+                </systemPropertyVariables>
+            </configuration>
+            </plugin>
+        </plugins>
+    </build>
 ```
 
 Create a JUnit test class :
