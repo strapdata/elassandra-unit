@@ -1,4 +1,4 @@
-# ElassandraUnit
+git statu# ElassandraUnit
 
 **ElassandraUnit** is a fork form [CassandraUnit](https://github.com/jsevellec/cassandra-unit) modified for [Elassandra](http://www.elassandra.io).
 
