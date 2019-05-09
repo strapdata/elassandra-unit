@@ -1,27 +1,6 @@
 package org.cassandraunit.utils;
 
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.Session;
-import com.google.common.collect.Lists;
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.db.commitlog.CommitLog;
-import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.cassandra.io.util.FileUtils;
-import org.apache.cassandra.service.CassandraDaemon;
-import org.apache.cassandra.service.ElassandraDaemon;
-import org.apache.cassandra.utils.FBUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.thrift.transport.TTransportException;
-import org.elassandra.env.EnvironmentLoader;
-import org.elasticsearch.cli.Terminal;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.env.Environment;
-import org.elasticsearch.node.InternalSettingsPreparer;
-import org.elasticsearch.plugins.Plugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.reader.UnicodeReader;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +13,11 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,7 +25,22 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import org.apache.cassandra.config.DatabaseDescriptor;
+import org.apache.cassandra.db.commitlog.CommitLog;
+import org.apache.cassandra.exceptions.ConfigurationException;
+import org.apache.cassandra.io.FSWriteError;
+import org.apache.cassandra.service.ElassandraDaemon;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.thrift.transport.TTransportException;
+import org.elassandra.env.EnvironmentLoader;
+import org.elasticsearch.plugins.Plugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.reader.UnicodeReader;
+
+import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.QueryOptions;
+import com.datastax.driver.core.Session;
 
 /**
  * @author Jeremy Sevellec
@@ -271,22 +269,22 @@ public class EmbeddedCassandraServerHelper {
 
     /**
      * Get the embedded cassandra cluster name
-     * 
+     *
      * @return the cluster name
      */
     public static String getClusterName() {
         return DatabaseDescriptor.getClusterName();
     }
-    
+
     /**
      * Get embedded cassandra host.
-     * 
+     *
      * @return the cassandra host
      */
     public static String getHost() {
         return DatabaseDescriptor.getRpcAddress().getHostName();
     }
-    
+
     /**
      * Get embedded cassandra RPC port.
      *
@@ -324,12 +322,28 @@ public class EmbeddedCassandraServerHelper {
                 .filter(nonSystemKeyspaces())
                 .forEach(CqlOperations.dropKeyspace(session));
     }
-    
-    private static void rmdir(String dir) {
-        File dirFile = new File(dir);
-        if (dirFile.exists()) {
-            FileUtils.deleteRecursive(dirFile);
+
+    private static void deleteRecursive(File dir) {
+        if (!dir.exists()) {
+            return;
         }
+        if (dir.isDirectory()) {
+            File[] children = dir.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteRecursive(child);
+                }
+            }
+        }
+        try {
+            Files.delete(dir.toPath());
+        } catch (Throwable t) {
+            throw new FSWriteError(t, dir);
+        }
+    }
+
+    private static void rmdir(String dir) {
+        deleteRecursive(new File(dir));
     }
 
     /**
@@ -352,10 +366,12 @@ public class EmbeddedCassandraServerHelper {
      * Creates a directory
      *
      * @param dir
-     * @throws IOException
      */
     private static void mkdir(String dir) {
-        FileUtils.createDirectory(dir);
+        File dirFile = new File(dir);
+        if (!dirFile.exists() && !dirFile.mkdirs()) {
+            throw new FSWriteError(new IOException("Failed to mkdirs " + dir), dir);
+        }
     }
 
     private static void cleanupAndLeaveDirs() throws IOException {
@@ -374,7 +390,7 @@ public class EmbeddedCassandraServerHelper {
             File dir = new File(dirName);
             if (!dir.exists())
                 throw new RuntimeException("No such directory: " + dir.getAbsolutePath());
-            FileUtils.deleteRecursive(dir);
+            rmdir(dirName);
         }
     }
 
@@ -409,7 +425,7 @@ public class EmbeddedCassandraServerHelper {
             writeStringToYamlFile(cassandraConfig, sb.toString());
         }
     }
-    
+
     private static String readYamlFileToString(File yamlFile) throws IOException {
         // using UnicodeReader to read the correct encoding according to BOM
         try (UnicodeReader reader = new UnicodeReader(new FileInputStream(yamlFile))) {
