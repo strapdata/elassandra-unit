@@ -24,7 +24,7 @@
         <connection>scm:git:https://github.com/strapdata/elassandra-unit.git</connection>
         <developerConnection>scm:git:https://github.com/strapdata/elassandra-unit.git</developerConnection>
         <url>https://github.com/strapdata/elassandra-unit.git</url>
-        <tag>elassandra-unit-parent-3.5.0.2</tag>
+        <tag>elassandra-unit-parent-3.5.0.4</tag>
   </scm>
     <modules>
         <module>cassandra-unit</module>
