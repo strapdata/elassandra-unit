@@ -3,7 +3,7 @@
     <parent>
         <groupId>com.strapdata.elassandraunit</groupId>
         <artifactId>elassandra-unit-parent</artifactId>
-        <version>3.5.0.5-SNAPSHOT</version>
+        <version>3.5.0.5</version>
     </parent>
     <artifactId>elassandra-unit-shaded</artifactId>
     <description>Shaded version of cassandra-unit</description>
