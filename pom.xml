@@ -38,7 +38,7 @@
         <cu.junit.version>4.12</cu.junit.version>
         <cu.slf4j.version>1.7.12</cu.slf4j.version>
         <cu.elassandra.version>6.2.3.16</cu.elassandra.version>
-        <cu.cassandra.driver.version>3.5.0</cu.cassandra.driver.version>
+        <cu.cassandra.driver.version>3.7.1</cu.cassandra.driver.version>
         <cu.spring.version>4.0.2.RELEASE</cu.spring.version>
         <cu.hamcrest.version>1.3</cu.hamcrest.version>
     </properties>
