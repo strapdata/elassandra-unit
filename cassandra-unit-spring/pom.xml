@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>com.strapdata.elassandraunit</groupId>
 		<artifactId>elassandra-unit-parent</artifactId>
-        <version>3.5.0.6-SNAPSHOT</version>
+        <version>3.7.1.0-SNAPSHOT</version>
 	</parent>
     <groupId>com.strapdata.elassandraunit</groupId>
 	<artifactId>elassandra-unit-spring</artifactId>
