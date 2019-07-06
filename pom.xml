@@ -4,7 +4,7 @@
     <artifactId>elassandra-unit-parent</artifactId>
     <packaging>pom</packaging>
     <name>elassandra-unit-parent</name>
-    <version>3.7.1.0</version>
+    <version>3.7.1.1-SNAPSHOT</version>
     <description>Test framework to develop with Cassandra</description>
     <url>https://github.com/strapdata/elassandra-unit</url>
     <licenses>
@@ -24,7 +24,7 @@
         <connection>scm:git:https://github.com/strapdata/elassandra-unit.git</connection>
         <developerConnection>scm:git:https://github.com/strapdata/elassandra-unit.git</developerConnection>
         <url>https://github.com/strapdata/elassandra-unit.git</url>
-        <tag>elassandra-unit-parent-3.7.1.0</tag>
+        <tag>elassandra-unit-parent-3.5.0.4</tag>
   </scm>
     <modules>
         <module>cassandra-unit</module>
