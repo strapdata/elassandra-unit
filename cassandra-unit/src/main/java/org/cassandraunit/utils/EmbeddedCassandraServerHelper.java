@@ -193,8 +193,6 @@ public class EmbeddedCassandraServerHelper {
         } catch (InterruptedException e) {
             log.error("Interrupted waiting for Cassandra daemon to start:", e);
             throw new AssertionError(e);
-        } finally {
-            executor.shutdown();
         }
     }
 
