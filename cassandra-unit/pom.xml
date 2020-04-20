@@ -110,7 +110,7 @@
         </dependency>
         <dependency>
             <groupId>com.strapdata.elasticsearch.plugin</groupId>
-            <artifactId>transport-netty4</artifactId>
+            <artifactId>transport-netty4-client</artifactId>
             <version>${cu.elassandra.version}</version>
         </dependency>
         <dependency> <!-- for cassandra-all because maven fails to reliably resolve the conflict with cassandra-driver-core -->
