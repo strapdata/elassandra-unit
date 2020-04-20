@@ -79,23 +79,23 @@ public class EmbeddedCassandraServerHelper {
         startEmbeddedCassandra(DEFAULT_STARTUP_TIMEOUT);
     }
 
-    public static void startEmbeddedCassandra(long timeout) throws TTransportException, ConfigurationException, IOException {
+    public static void startEmbeddedCassandra(long timeout) throws IOException {
         startEmbeddedCassandra(DEFAULT_CASSANDRA_YML_FILE, timeout);
     }
 
-    public static void startEmbeddedCassandra(String yamlFile) throws TTransportException, IOException, ConfigurationException {
+    public static void startEmbeddedCassandra(String yamlFile) throws IOException {
         startEmbeddedCassandra(yamlFile, DEFAULT_STARTUP_TIMEOUT);
     }
 
-    public static void startEmbeddedCassandra(String yamlFile, long timeout) throws TTransportException, IOException, ConfigurationException {
+    public static void startEmbeddedCassandra(String yamlFile, long timeout) throws IOException {
         startEmbeddedCassandra(yamlFile, DEFAULT_TMP_DIR, timeout);
     }
 
-    public static void startEmbeddedCassandra(String yamlFile, String tmpDir) throws TTransportException, IOException, ConfigurationException {
+    public static void startEmbeddedCassandra(String yamlFile, String tmpDir) throws IOException {
         startEmbeddedCassandra(yamlFile, tmpDir, DEFAULT_STARTUP_TIMEOUT);
     }
 
-    public static void startEmbeddedCassandra(String yamlFile, String tmpDir, long timeout) throws TTransportException, IOException, ConfigurationException {
+    public static void startEmbeddedCassandra(String yamlFile, String tmpDir, long timeout) throws IOException {
         if (elassandraDaemon != null) {
             /* nothing to do Cassandra is already started */
             return;
@@ -111,7 +111,7 @@ public class EmbeddedCassandraServerHelper {
         startEmbeddedCassandra(file, tmpDir, timeout);
     }
 
-    public static void startEmbeddedCassandra(File file, long timeout) throws TTransportException, IOException, ConfigurationException {
+    public static void startEmbeddedCassandra(File file, long timeout) throws IOException {
         startEmbeddedCassandra(file, DEFAULT_TMP_DIR, timeout);
     }
         /**
@@ -121,7 +121,7 @@ public class EmbeddedCassandraServerHelper {
          * @throws IOException
          * @throws ConfigurationException
          */
-    public static void startEmbeddedCassandra(File file, String tmpDir, long timeout) throws IOException, ConfigurationException {
+    public static void startEmbeddedCassandra(File file, String tmpDir, long timeout) throws IOException {
         if (elassandraDaemon != null) {
             /* nothing to do Cassandra is already started */
             return;
